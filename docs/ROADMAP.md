@@ -1,5 +1,33 @@
 # Milestones / definition of done
 
+## Mission
+
+ProjectZero should grow from single servers for households and clubs into a **global,
+community-owned AI network: a real alternative to commercial AI providers**, run on hardware
+people already own, independent of any single company or server. It will not match a data
+center on the speed of one answer; it aims to win on cost, openness and independence.
+Background and design options: [RESEARCH_GLOBAL_GRID.md](RESEARCH_GLOBAL_GRID.md).
+
+## Phase 3 - Global community grid (long-term goal)
+
+Nothing here is implemented yet. Order matters: a server must be safe to offer to strangers
+before servers can be connected to each other.
+
+- [ ] **Internet-ready single server.** Reverse-proxy and TLS guide, trusted-proxy
+  `X-Forwarded-For` handling (#20), abuse reporting, retention and deletion rules, a privacy
+  notice template for operators (see "Before you go public" in [SECURITY.md](SECURITY.md)).
+- [ ] **Answers you can trust between strangers.** Result spot checks with trusted machines
+  (#26) and reputation for machines, so credits keep their meaning in an open network.
+- [ ] **Federation protocol (design first).** Server identity keys, exchange of load
+  summaries, forwarding of work with a hop limit, the privacy level travels with the job, the
+  origin server owns the job.
+- [ ] **Credits across servers.** Per-server ledgers, signed receipts, periodic settlement
+  between servers; a cheating server loses trust and is disconnected.
+- [ ] **Finding a community.** A public, opt-in directory of servers (region, languages,
+  models, registration mode) and joining from the app.
+- [ ] **Regional routing.** Prefer nearby servers and machines to keep waiting times low.
+- [ ] **Community-run public servers.** Only after the security items above are done.
+
 ## v0.3 - ProjectZero public release (done)
 
 - [x] Self-registration (`off` / `invite` / `open`), member accounts, user-token rotation

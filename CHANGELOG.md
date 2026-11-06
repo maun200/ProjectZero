@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Documentation
+
+- Long-term goal stated in the README and roadmap: a global, federated, community-owned AI
+  network as an alternative to commercial providers (Phase 3, not implemented yet).
+
 ## [0.3.0] - 2026-11-06
 
 First public release as ProjectZero.

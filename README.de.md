@@ -4,7 +4,7 @@
 Chatte mit einer KI, die auf den Rechnern deiner Gruppe läuft, verdiene Credits, indem du
 deinen eigenen Computer teilst, und schreib mit den anderen in der Lobby, in Gruppen oder direkt.
 
-[English](README.md) · [Mitmachen](CONTRIBUTING.md) · [Sicherheit](docs/SECURITY.md) · [Roadmap](docs/ROADMAP.md) · MIT-Lizenz
+[English](README.md) · [Mitmachen](CONTRIBUTING.md) · [Sicherheit](docs/SECURITY.md) · [Roadmap](docs/ROADMAP.md) · [Vision](#wohin-es-geht-ein-globales-community-netz) · MIT-Lizenz
 
 ![ProjectZero-App im hellen Design: KI-Chat in der Mitte, Kanäle und Online-Maschinen links, Credits und Leistungsregler rechts](docs/img/app-light.png)
 
@@ -113,6 +113,25 @@ Den Server nicht ohne HTTPS-Reverse-Proxy ins Internet stellen und vorher
   Maschine verschwindet.
 - `privacy=trusted`-Aufgaben gehen nur an Maschinen, die der Betreiber als vertrauenswürdig
   markiert hat; wer sich über die App registriert, ist eine `community`-Maschine.
+
+## Wohin es geht: ein globales Community-Netz
+
+ProjectZero fängt bewusst klein an: ein Server für einen Haushalt, einen Verein oder einen
+Freundeskreis. Das langfristige Ziel ist größer: **ein weltweites KI-Netz, das der Community
+gehört und eine echte Alternative zu kommerziellen KI-Anbietern ist.** Menschen überall bringen
+Hardware ein, die sie ohnehin besitzen, und das Netz hängt von keiner einzelnen Firma und keinem
+einzelnen Server ab.
+
+Der Weg dahin ist Föderation, ähnlich wie bei E-Mail oder Matrix: viele unabhängige Server,
+jeder von seiner eigenen Community betrieben, die sich gegenseitig Arbeit abgeben, wenn sie
+ausgelastet sind, und Credits untereinander verrechnen. Eine einzelne Antwort wird nicht so
+schnell sein wie aus einem Rechenzentrum. Dafür kann das Netz fast kostenlos sein (die
+Hauptkosten sind der Strom für Hardware, die es schon gibt), unabhängig und offen.
+
+**Nichts davon gibt es schon.** Heute steht jeder Server für sich. Die Schritte dorthin stehen
+in Phase 3 der [Roadmap](docs/ROADMAP.md#phase-3---global-community-grid-long-term-goal) und
+werden in [docs/RESEARCH_GLOBAL_GRID.md](docs/RESEARCH_GLOBAL_GRID.md) ausgearbeitet. Wer dabei
+mitbauen will, fängt am besten dort an.
 
 ## Was es nicht ist
 

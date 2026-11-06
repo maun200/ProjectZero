@@ -4,7 +4,7 @@
 Chat with an AI that runs on your group's machines, earn credits by sharing your own
 computer, and talk to each other in a lobby, in groups or directly.
 
-[Deutsch](README.de.md) · [Contributing](CONTRIBUTING.md) · [Security](docs/SECURITY.md) · [Roadmap](docs/ROADMAP.md) · MIT license
+[Deutsch](README.de.md) · [Contributing](CONTRIBUTING.md) · [Security](docs/SECURITY.md) · [Roadmap](docs/ROADMAP.md) · [Vision](#where-this-is-going-a-global-community-grid) · MIT license
 
 ![ProjectZero app in the anthracite theme: AI chat in the middle, channels and machines online on the left, credits and compute sliders on the right](docs/img/app-dark.png)
 
@@ -111,6 +111,24 @@ Do not put the server on the internet without an HTTPS reverse proxy and reading
 - Leases, heartbeats, retries and refunds keep jobs moving when a machine disappears.
 - `privacy=trusted` jobs only go to machines the operator marked as trusted; everyone who
   registers through the app is a `community` machine.
+
+## Where this is going: a global community grid
+
+ProjectZero starts small on purpose: one server for a household, a club or a group of friends.
+The long-term goal is bigger: **a global, community-owned AI network that is a real alternative
+to commercial AI providers.** People everywhere contribute hardware they already own, and the
+network does not depend on any single company or server.
+
+The plan is federation, similar to e-mail or Matrix: many independent servers, each run by its
+own community, that forward work to each other when they are busy and settle credits between
+them. A single answer will not be as fast as from a data center. In return the network can be
+almost free to use (the main cost is the electricity of hardware that already exists),
+independent and open.
+
+**None of this exists yet.** Today every server stands on its own. The steps to get there are
+Phase 3 of the [roadmap](docs/ROADMAP.md#phase-3---global-community-grid-long-term-goal) and are
+worked out in [docs/RESEARCH_GLOBAL_GRID.md](docs/RESEARCH_GLOBAL_GRID.md). If you want to help
+build it, that is the place to start.
 
 ## What it is not
 
