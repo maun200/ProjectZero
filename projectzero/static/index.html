@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ProjectZero</title>
+<style>
+:root{--bg:#f4f6fa;--panel:#fff;--soft:#eef1f6;--line:#d9dee7;--text:#18202c;--muted:#5a6578;--accent:#2a5bd7;--accent-text:#fff;--good:#1d7a46;--warn:#9a5b00;--bad:#b42318;--mine:#e3ebff}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1e2125;--panel:#262a2f;--soft:#2f343a;--line:#3a4047;--text:#e4e7eb;--muted:#a3aab4;--accent:#7ea6ff;--accent-text:#10141c;--good:#5cc98d;--warn:#e3ad52;--bad:#ff8378;--mine:#2e3a52}}
+:root[data-theme=dark]{--bg:#1e2125;--panel:#262a2f;--soft:#2f343a;--line:#3a4047;--text:#e4e7eb;--muted:#a3aab4;--accent:#7ea6ff;--accent-text:#10141c;--good:#5cc98d;--warn:#e3ad52;--bad:#ff8378;--mine:#2e3a52}
+.ico{width:1.05em;height:1.05em;flex:none;vertical-align:-.15em;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav li button .label{display:flex;gap:.5rem;align-items:center;min-width:0}
+header .logo{display:flex;align-items:center;gap:.45rem}header .logo .ico{width:1.4em;height:1.4em;color:var(--accent)}
+.iconbtn{display:flex;align-items:center;gap:.35rem}
+label.field{display:block;margin-top:.6rem;font-size:.88rem}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:.45rem .8rem}
+button.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+button:disabled{opacity:.55;cursor:not-allowed}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.5rem .6rem;width:100%}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:250px minmax(0,1fr) 310px;grid-template-rows:auto minmax(0,1fr);height:100vh;height:100dvh}
+header{grid-column:1/-1;display:flex;align-items:center;gap:1rem;padding:.6rem 1rem;background:var(--panel);border-bottom:1px solid var(--line)}
+header .logo{font-weight:800;letter-spacing:.02em}
+header .server{color:var(--muted);font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .spacer{flex:1}
+.dot{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;background:var(--muted);margin-right:.35rem;vertical-align:middle}
+.dot.on{background:var(--good)}.dot.off{background:var(--bad)}
+nav{background:var(--panel);border-right:1px solid var(--line);overflow:auto;padding:.75rem}
+nav h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:1rem .25rem .35rem;display:flex;justify-content:space-between;align-items:center}
+nav h2 button{padding:.05rem .45rem;font-size:.85rem}
+nav ul{list-style:none;margin:0;padding:0}
+nav li button{width:100%;text-align:left;border:0;background:none;padding:.4rem .5rem;border-radius:6px;display:flex;gap:.4rem;align-items:center;justify-content:space-between}
+nav li button[aria-current="true"]{background:var(--mine);font-weight:600}
+nav li button:hover{background:var(--soft)}
+.badge{background:var(--accent);color:var(--accent-text);border-radius:999px;font-size:.72rem;padding:0 .4rem}
+.muted{color:var(--muted)}
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.chathead{padding:.7rem 1rem;border-bottom:1px solid var(--line);background:var(--panel);display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+.chathead h1{font-size:1.05rem;margin:0;flex:1;min-width:8rem}
+.chathead select{width:auto}
+.log{flex:1;overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:.6rem}
+.msg{max-width:46rem;padding:.55rem .8rem;border-radius:12px;background:var(--panel);border:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.mine{align-self:flex-end;background:var(--mine)}
+.msg code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;background:var(--soft);border-radius:4px;padding:.05rem .3rem}
+.msg pre.code{background:var(--soft);border-radius:8px;padding:.6rem;overflow:auto;white-space:pre;margin:.4rem 0}
+.msg pre.code code{background:none;padding:0}
+.msg .who{font-size:.78rem;color:var(--muted);margin-bottom:.15rem}
+.msg.system{align-self:center;background:none;border:0;color:var(--muted);font-size:.88rem;text-align:center}
+.composer{display:flex;gap:.5rem;padding:.75rem 1rem;border-top:1px solid var(--line);background:var(--panel)}
+.composer textarea{resize:none;height:3rem}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:1rem;display:flex;flex-direction:column;gap:1rem}
+.card{background:var(--soft);border-radius:12px;padding:.9rem}
+.card h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 .5rem}
+.credits{font-size:2.4rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;gap:.5rem;font-size:.9rem;margin-top:.2rem}
+.slider{margin-top:.7rem}
+.slider label{display:flex;justify-content:space-between;font-size:.88rem}
+.slider input{padding:0;border:0;background:none}
+.switch{display:flex;align-items:center;gap:.6rem;font-weight:600}
+.switch input{width:1.2rem;height:1.2rem}
+.note{font-size:.82rem;color:var(--muted)}
+.warn{color:var(--warn)}.bad{color:var(--bad)}.good{color:var(--good)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);max-width:30rem;width:calc(100% - 2rem);padding:1.25rem}
+dialog::backdrop{background:#0008}
+dialog h2{margin-top:0}
+dialog label{display:block;margin:.8rem 0 .25rem;font-weight:600}
+.actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap}
+.tabs{display:flex;gap:.5rem;margin:.5rem 0}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-text)}
+.hidden{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mobile-tabs{display:none}
+@media (max-width:900px){
+ .app{grid-template-columns:1fr;grid-template-rows:auto auto minmax(0,1fr)}
+ .mobile-tabs{display:flex;gap:.25rem;padding:.4rem;background:var(--panel);border-bottom:1px solid var(--line)}
+ .mobile-tabs button{flex:1}
+ .mobile-tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+ header{flex-wrap:wrap;gap:.4rem .6rem;padding:.5rem .75rem}
+ header .spacer{display:none}
+ header .logo{flex:1}
+ header .server{order:9;flex:1 1 100%;min-width:0;font-size:.82rem}
+ #whoami{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw}
+ input,select,textarea{font-size:16px}
+ #ai-controls{display:flex;flex-wrap:wrap;gap:.4rem;min-width:0;max-width:100%}
+ .chathead select{max-width:100%}
+ .composer{padding:.5rem .75rem}
+ nav,aside,main{display:none}
+ .app[data-view="nav"] nav,.app[data-view="main"] main,.app[data-view="aside"] aside{display:flex;flex-direction:column}
+ nav{display:none}
+ .app[data-view="nav"] nav{display:block}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-view="main">
+<header>
+  <span class="logo"><span data-icon="logo"></span>ProjectZero</span>
+  <span class="server" id="server"><span class="dot" id="server-dot"></span><span id="server-text" data-i18n="notConnected"></span></span>
+  <span class="spacer"></span>
+  <span id="whoami" class="muted"></span>
+  <button id="lang-btn" class="iconbtn" data-i18n-aria="langSwitch"><span data-icon="globe"></span><span id="lang-label">EN</span></button>
+  <button id="theme-btn" class="iconbtn" data-i18n-aria="themeSwitch"><span data-icon="theme"></span><span id="theme-label"></span></button>
+  <button id="account-btn" aria-haspopup="dialog" data-i18n="account"></button>
+</header>
+<div class="mobile-tabs" role="tablist" data-i18n-aria="view">
+  <button role="tab" aria-selected="false" data-view="nav" data-i18n="tabChannels"></button><button role="tab" aria-selected="true" data-view="main" data-i18n="tabChat"></button><button role="tab" aria-selected="false" data-view="aside" data-i18n="tabCredits"></button>
+</div>
+
+<nav data-i18n-aria="channels">
+  <ul><li><button data-channel="ai" aria-current="true"><span class="label"><span data-icon="ai"></span><span data-i18n="aiChat"></span></span></button></li></ul>
+  <h2><span data-i18n="rooms"></span></h2><ul id="rooms"></ul>
+  <h2><span data-i18n="groups"></span> <button id="new-group" data-i18n-aria="newGroup"><span data-icon="plus"></span></button></h2><ul id="groups"></ul>
+  <h2><span data-i18n="direct"></span> <button id="new-dm" data-i18n-aria="newDirect"><span data-icon="plus"></span></button></h2><ul id="directs"></ul>
+  <h2><span data-i18n="onlineNow"></span></h2><ul id="online"></ul>
+  <p class="note" id="online-note"></p>
+</nav>
+
+<main>
+  <div class="chathead">
+    <h1 id="chat-title"></h1>
+    <span id="ai-controls">
+      <label class="sr" for="model" data-i18n="model"></label><select id="model"></select>
+      <label class="sr" for="privacy" data-i18n="whoProcesses"></label>
+      <select id="privacy">
+        <option value="community" data-i18n="privCommunity"></option>
+        <option value="trusted" data-i18n="privTrusted"></option>
+      </select>
+    </span>
+    <span id="group-controls" class="hidden"><button id="add-member" data-i18n="addMember"></button> <button id="leave-group" data-i18n="leave"></button></span>
+  </div>
+  <div class="log" id="log" aria-live="polite"></div>
+  <form class="composer" id="composer">
+    <label for="input" class="sr" data-i18n="message"></label>
+    <textarea id="input" data-i18n-placeholder="composerHint"></textarea>
+    <button class="primary" id="send" type="submit" data-i18n="send"></button>
+  </form>
+</main>
+
+<aside data-i18n-aria="creditsAndCompute">
+  <section class="card" aria-labelledby="credits-h">
+    <h2 id="credits-h" data-i18n="yourCredits"></h2>
+    <div class="credits" id="credits">-</div>
+    <div class="row"><span data-i18n="provisional"></span><b id="provisional">-</b></div>
+    <div class="row"><span data-i18n="autoCredited"></span><b id="earned">-</b></div>
+    <div class="row"><span data-i18n="costPerAnswer"></span><b id="cost">-</b></div>
+    <p class="note" data-i18n="creditsNote"></p>
+  </section>
+  <section class="card" aria-labelledby="machine-h">
+    <h2 id="machine-h" data-i18n="myCompute"></h2>
+    <label class="switch"><input type="checkbox" id="contribute"> <span data-i18n="shareCompute"></span></label>
+    <div class="row"><span data-i18n="status"></span><b id="worker-status"></b></div>
+    <div class="row"><span data-i18n="jobsDone"></span><b id="jobs-done">0</b></div>
+    <p class="note bad" id="worker-error"></p>
+    <label class="field" for="machine-name" data-i18n="deviceName"></label>
+    <input id="machine-name" maxlength="40" data-i18n-placeholder="deviceNameHint">
+    <label class="field" for="machine-model" data-i18n="deviceModel"></label>
+    <select id="machine-model"></select>
+    <label class="field" for="backend" data-i18n="execution"></label>
+    <select id="backend"><option value="ollama" data-i18n="backendOllama"></option><option value="mock" data-i18n="backendMock"></option></select>
+    <p class="note" id="ollama-note"></p>
+    <button id="pull" class="hidden"></button>
+    <div class="slider"><label for="cpu_threads"><span data-i18n="cpuThreads"></span> <b id="cpu_threads-v"></b></label><input type="range" id="cpu_threads" min="1" max="8"></div>
+    <div class="slider"><label for="gpu_layers"><span data-i18n="gpuLayers"></span> <b id="gpu_layers-v"></b></label><input type="range" id="gpu_layers" min="0" max="99"></div>
+    <div class="slider"><label for="max_output_tokens"><span data-i18n="maxAnswer"></span> <b id="max_output_tokens-v"></b></label><input type="range" id="max_output_tokens" min="16" max="512" step="16"></div>
+    <div class="slider"><label for="context_tokens"><span data-i18n="context"></span> <b id="context_tokens-v"></b></label><input type="range" id="context_tokens" min="512" max="8192" step="512"></div>
+    <p class="note" data-i18n="sliderNote"></p>
+  </section>
+  <section class="card" aria-labelledby="privacy-h">
+    <h2 id="privacy-h" data-i18n="goodToKnow"></h2>
+    <p class="note" data-i18n="privacyNote"></p>
+  </section>
+</aside>
+</div>
+
+<dialog id="setup" aria-labelledby="setup-h">
+  <h2 id="setup-h" data-i18n="welcome"></h2>
+  <div id="step-server">
+    <p data-i18n="whichServer"></p>
+    <label for="server-url" data-i18n="serverAddress"></label>
+    <input id="server-url" placeholder="http://127.0.0.1:8765" value="http://127.0.0.1:8765">
+    <p class="note" data-i18n="serverHint"></p>
+    <p class="bad" id="server-error" role="alert"></p>
+    <div class="actions"><button class="primary" id="server-next" data-i18n="next"></button></div>
+  </div>
+  <div id="step-account" class="hidden">
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" id="tab-register" data-i18n="registerTab"></button>
+      <button role="tab" aria-selected="false" id="tab-login" data-i18n="loginTab"></button>
+    </div>
+    <div id="pane-register">
+      <label for="reg-name" data-i18n="displayName"></label>
+      <input id="reg-name" maxlength="24" autocomplete="nickname">
+      <div id="invite-box" class="hidden"><label for="reg-invite" data-i18n="inviteCode"></label><input id="reg-invite" maxlength="40"></div>
+      <p class="note" id="reg-note"></p>
+    </div>
+    <div id="pane-login" class="hidden">
+      <label for="login-token" data-i18n="accessKey"></label>
+      <input id="login-token" type="password" autocomplete="off">
+    </div>
+    <p class="bad" id="account-error" role="alert"></p>
+    <div class="actions"><button id="account-back" data-i18n="back"></button><button class="primary" id="account-next" data-i18n="letsGo"></button></div>
+  </div>
+</dialog>
+
+<dialog id="account" aria-labelledby="account-h">
+  <h2 id="account-h" data-i18n="account"></h2>
+  <p id="account-info"></p>
+  <p class="note" data-i18n="keyWarning"></p>
+  <pre id="token-out" class="hidden" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+  <div class="actions"><button id="show-token" data-i18n="showKey"></button><button id="change-server" data-i18n="changeServer"></button><button id="logout" data-i18n="signOut"></button><button class="primary" id="account-close" data-i18n="close"></button></div>
+</dialog>
+
+<script>
+"use strict";
+const SESSION="__PZ_SESSION__";
+const $=id=>document.getElementById(id);
+const I18N={
+en:{notConnected:"not connected",account:"Account",langSwitch:"Switch language",themeSwitch:"Switch colour theme",view:"View",tabChannels:"Channels",tabChat:"Chat",tabCredits:"Credits",channels:"Channels",aiChat:"AI chat",rooms:"Rooms",groups:"Groups",direct:"Direct",newGroup:"New group",newDirect:"New direct message",onlineNow:"Online now",model:"Model",whoProcesses:"Who may process the request",privCommunity:"Community machines",privTrusted:"Trusted machines only",addMember:"Add member",leave:"Leave",message:"Message",composerHint:"Write a message... (Enter to send, Shift+Enter for a new line)",send:"Send",creditsAndCompute:"Credits and your computing power",yourCredits:"Your credits",provisional:"provisional (not yet released)",autoCredited:"credited automatically",costPerAnswer:"cost per AI answer",creditsNote:"Credits are play money for sharing compute time: not money, not transferable.",myCompute:"My computing power",shareCompute:"Share computing power",status:"Status",jobsDone:"jobs completed",deviceName:"Device name (visible to others)",deviceNameHint:"e.g. Living-room-PC",deviceModel:"Model on this device",execution:"Execution",backendOllama:"Ollama (real AI)",backendMock:"Demo (no AI, for testing)",cpuThreads:"CPU threads",gpuLayers:"GPU layers",maxAnswer:"max. answer length (tokens)",context:"context (tokens)",sliderNote:"More threads/GPU = faster, but your computer gets warmer and louder. Changes apply immediately.",goodToKnow:"Good to know",privacyNote:"Chats and AI requests are stored unencrypted on the server, and the computing machine can read your request. Do not enter personal or secret data.",welcome:"Welcome to ProjectZero",whichServer:"Which server do you want to connect to?",serverAddress:"Server address",serverHint:"Plain http is fine inside your own network (e.g. http://192.168.1.10:8765); on the internet use https only.",next:"Next",registerTab:"Create account",loginTab:"I already have an account",displayName:"Display name (3-24 characters: letters, digits, - and _)",inviteCode:"Invite code",accessKey:"Your access key (starts with cag_usr_)",back:"Back",letsGo:"Let's go",keyWarning:"Your access key is your login. Anyone who has it can spend your credits. Never share it.",showKey:"Show key (for a second device)",changeServer:"Change server",signOut:"Sign out",close:"Close",
+ themeSystem:"System",themeLight:"Light",themeDark:"Anthracite",regOff:"Self-registration is switched off on this server. Ask the operator for access.",regInfo:"You start with {credits} credits. One AI answer costs {cost}.",signedIn:"Signed in. Have fun!",signedInAs:"Signed in as {name} on {server}",notSignedIn:"Not signed in",noName:"(no name)",confirmLogout:"Sign out? Without your access key you cannot get back into this account.",off:"off",computing:"computing...",noConnection:"no connection",ready:"ready",stopped:"stopped",mockNote:"Demo mode: answers are placeholders, not AI.",ollamaFound:"Ollama found ({n} models installed).",ollamaMissing:"Ollama not found. Install it from ollama.com to run real AI jobs.",downloading:"Downloading...",downloadModel:"Download model",available:"available",nobodyOnline:"nobody online right now",machinesPeople:"{m} {mWord} - {p} {pWord} active",machine1:"machine",machineN:"machines",person1:"person",personN:"people",dm:"Direct message",by:"by",aiEmpty:"Ask the AI something. Every answer costs credits and is computed by a machine in the network.",you:"You",ai:"AI",lobbyEmpty:"The lobby is the room for everyone. Say hello!",noMessages:"No messages yet.",error:"Error",whoDm:"Who do you want to write to? (display name)",groupName:"Group name",groupMembers:"Members (names separated by commas, optional)",whoAdd:"Who should be added? (display name)",confirmLeave:"Leave this group?",consent:"Your question will be computed by an unknown community machine that can read the text. No personal data! Continue?",sending:"Sending to a machine in the network...",waiting:"Waiting for a free machine...",working:"A machine is computing...",noAnswer:"No answer: {reason} (credits were refunded)",tooLong:"This is taking unusually long. Please try again later.",myComputer:"My-Computer",appUnreachable:"Local app not reachable: {msg}",new:"new"},
+de:{notConnected:"nicht verbunden",account:"Konto",langSwitch:"Sprache wechseln",themeSwitch:"Farbschema wechseln",view:"Ansicht",tabChannels:"Kanäle",tabChat:"Chat",tabCredits:"Credits",channels:"Kanäle",aiChat:"KI-Chat",rooms:"Räume",groups:"Gruppen",direct:"Direkt",newGroup:"Neue Gruppe",newDirect:"Neue Direktnachricht",onlineNow:"Gerade online",model:"Modell",whoProcesses:"Wer darf die Anfrage verarbeiten",privCommunity:"Community-Maschinen",privTrusted:"Nur vertrauenswürdige Maschinen",addMember:"Mitglied hinzufügen",leave:"Verlassen",message:"Nachricht",composerHint:"Nachricht schreiben ... (Enter senden, Shift+Enter neue Zeile)",send:"Senden",creditsAndCompute:"Credits und eigene Rechenleistung",yourCredits:"Deine Credits",provisional:"vorläufig (noch nicht freigegeben)",autoCredited:"automatisch gutgeschrieben",costPerAnswer:"Kosten pro KI-Antwort",creditsNote:"Credits sind Spielgeld für die Verteilung von Rechenzeit: kein Geld, nicht übertragbar.",myCompute:"Meine Rechenleistung",shareCompute:"Rechenleistung teilen",status:"Status",jobsDone:"erledigte Aufgaben",deviceName:"Gerätename (für andere sichtbar)",deviceNameHint:"z. B. Wohnzimmer-PC",deviceModel:"Modell auf diesem Gerät",execution:"Ausführung",backendOllama:"Ollama (echte KI)",backendMock:"Demo (ohne KI, zum Testen)",cpuThreads:"CPU-Threads",gpuLayers:"GPU-Schichten",maxAnswer:"max. Antwortlänge (Tokens)",context:"Kontext (Tokens)",sliderNote:"Mehr Threads/GPU = schneller, aber dein Rechner wird wärmer und lauter. Änderungen gelten sofort.",goodToKnow:"Gut zu wissen",privacyNote:"Chats und KI-Anfragen liegen unverschlüsselt auf dem Server, und die rechnende Maschine sieht deine Anfrage. Keine persönlichen oder geheimen Daten eingeben.",welcome:"Willkommen bei ProjectZero",whichServer:"Mit welchem Server möchtest du dich verbinden?",serverAddress:"Server-Adresse",serverHint:"Im eigenen Netz geht http (z. B. http://192.168.1.10:8765), im Internet nur https.",next:"Weiter",registerTab:"Neu registrieren",loginTab:"Ich habe schon ein Konto",displayName:"Anzeigename (3-24 Zeichen: Buchstaben, Ziffern, - und _)",inviteCode:"Einladungscode",accessKey:"Dein Zugangsschlüssel (beginnt mit cag_usr_)",back:"Zurück",letsGo:"Los geht's",keyWarning:"Dein Zugangsschlüssel ist dein Login. Wer ihn hat, kann deine Credits ausgeben. Niemals weitergeben.",showKey:"Schlüssel anzeigen (für ein zweites Gerät)",changeServer:"Server wechseln",signOut:"Abmelden",close:"Schließen",
+ themeSystem:"System",themeLight:"Hell",themeDark:"Anthrazit",regOff:"Auf diesem Server ist Selbst-Registrierung ausgeschaltet. Frag den Betreiber nach einem Zugang.",regInfo:"Du startest mit {credits} Credits. Eine KI-Antwort kostet {cost}.",signedIn:"Angemeldet. Viel Spaß!",signedInAs:"Angemeldet als {name} bei {server}",notSignedIn:"Nicht angemeldet",noName:"(ohne Namen)",confirmLogout:"Abmelden? Ohne deinen Zugangsschlüssel kommst du nicht wieder in dieses Konto.",off:"aus",computing:"rechnet ...",noConnection:"keine Verbindung",ready:"bereit",stopped:"gestoppt",mockNote:"Demo-Modus: Antworten sind Platzhalter, keine KI.",ollamaFound:"Ollama gefunden ({n} Modelle installiert).",ollamaMissing:"Ollama nicht gefunden. Installiere es von ollama.com, um echte KI-Aufgaben zu rechnen.",downloading:"Wird heruntergeladen ...",downloadModel:"Modell herunterladen",available:"verfügbar",nobodyOnline:"gerade niemand online",machinesPeople:"{m} {mWord} - {p} {pWord} aktiv",machine1:"Maschine",machineN:"Maschinen",person1:"Mensch",personN:"Menschen",dm:"Direktnachricht",by:"von",aiEmpty:"Stell der KI eine Frage. Jede Antwort kostet Credits und wird von einer Maschine im Netz berechnet.",you:"Du",ai:"KI",lobbyEmpty:"Die Lobby ist der Raum für alle. Sag hallo!",noMessages:"Noch keine Nachrichten.",error:"Fehler",whoDm:"Mit wem möchtest du schreiben? (Anzeigename)",groupName:"Name der Gruppe",groupMembers:"Mitglieder (Namen mit Komma getrennt, optional)",whoAdd:"Wen hinzufügen? (Anzeigename)",confirmLeave:"Gruppe verlassen?",consent:"Deine Frage wird von einer fremden Community-Maschine berechnet, die den Text lesen kann. Keine persönlichen Daten! Fortfahren?",sending:"Wird an eine Maschine im Netz gesendet ...",waiting:"Wartet auf eine freie Maschine ...",working:"Eine Maschine rechnet ...",noAnswer:"Keine Antwort: {reason} (Credits wurden erstattet)",tooLong:"Das dauert ungewöhnlich lange. Versuch es später erneut.",myComputer:"Mein-Rechner",appUnreachable:"Lokale App nicht erreichbar: {msg}",new:"neu"}};
+let lang="en";try{lang=localStorage.getItem("pz-lang")||"en"}catch(e){}if(!I18N[lang])lang="en";
+function t(key,vars={}){let s=(I18N[lang][key]??I18N.en[key]??key);for(const[k,v]of Object.entries(vars))s=s.replaceAll("{"+k+"}",v);return s}
+function applyLang(){document.documentElement.lang=lang;$("lang-label").textContent=lang.toUpperCase();
+  document.querySelectorAll("[data-i18n]").forEach(n=>n.textContent=t(n.dataset.i18n));
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(n=>n.placeholder=t(n.dataset.i18nPlaceholder));
+  document.querySelectorAll("[data-i18n-aria]").forEach(n=>n.setAttribute("aria-label",t(n.dataset.i18nAria)));
+  if(typeof applyTheme==="function")applyTheme(theme)}
+const ICONS={
+ logo:'<circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="12" cy="12" r="2.5"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M6.6 6.6l3.6 3.6M17.4 6.6l-3.6 3.6M6.6 17.4l3.6-3.6M17.4 17.4l-3.6-3.6"/>',
+ ai:'<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/><path d="M10 10h4v4h-4z"/>',
+ lobby:'<path d="M4 5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M19 9h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v3l-4-3h-3"/>',
+ group:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.2c2.9.2 5 2.6 5 5.8"/>',
+ direct:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/>',
+ machine:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
+ person:'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7"/>',
+ theme:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>'};
+function icon(name){const s=document.createElementNS("http://www.w3.org/2000/svg","svg");s.setAttribute("viewBox","0 0 24 24");s.setAttribute("class","ico");s.setAttribute("aria-hidden","true");s.innerHTML=ICONS[name]||"";return s}
+document.querySelectorAll("[data-icon]").forEach(n=>n.replaceWith(icon(n.dataset.icon)));
+function el(tag,props={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k==="text")e.textContent=v;else if(k.startsWith("on"))e.addEventListener(k.slice(2),v);else e.setAttribute(k,v)}for(const c of kids)e.append(c);return e}
+function label(ic,text){return el("span",{class:"label"},icon(ic),el("span",{text}))}
+const THEMES=["system","light","dark"],THEME_KEYS={system:"themeSystem",light:"themeLight",dark:"themeDark"};
+let theme="system";try{theme=localStorage.getItem("pz-theme")||"system"}catch(e){}if(!THEMES.includes(theme))theme="system";
+function applyTheme(v){if(v==="system")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",v);$("theme-label").textContent=t(THEME_KEYS[v]);try{localStorage.setItem("pz-theme",v)}catch(e){}}
+$("theme-btn").onclick=()=>{theme=THEMES[(THEMES.indexOf(theme)+1)%3];applyTheme(theme)};
+$("lang-btn").onclick=()=>{lang=lang==="en"?"de":"en";try{localStorage.setItem("pz-lang",lang)}catch(e){}applyLang();rerender()};
+applyLang();
+
+const state={local:null,me:null,channels:[],active:"ai",lastId:{},ai:[],online:{machines:[],people:[],models:[]},public:null};
+async function call(path,options={}){
+  const r=await fetch(path,{...options,headers:{"X-PZ-Session":SESSION,"Content-Type":"application/json",...(options.headers||{})}});
+  let body=null;try{body=await r.json()}catch(e){}
+  if(!r.ok){const d=body&&body.detail;throw new Error(typeof d==="string"?d:(d?JSON.stringify(d):t("error")+" "+r.status))}
+  return body;
+}
+const post=(p,b)=>call(p,{method:"POST",body:JSON.stringify(b||{})});
+// Minimal, safe Markdown subset for AI answers: ```code blocks```, `inline code`, **bold**.
+// Builds DOM nodes with textContent only; never interprets HTML.
+function md(text){const frag=document.createDocumentFragment();const parts=String(text).split(/```[a-zA-Z0-9_-]*\n?/);
+  parts.forEach((part,i)=>{if(i%2===1){frag.append(el("pre",{class:"code"},el("code",{text:part.replace(/\n$/,"")})));return}
+    for(const tok of part.split(/(`[^`\n]+`|\*\*[^*\n]+\*\*)/)){if(!tok)continue;
+      if(tok.startsWith("`")&&tok.endsWith("`")&&tok.length>2)frag.append(el("code",{text:tok.slice(1,-1)}));
+      else if(tok.startsWith("**")&&tok.endsWith("**")&&tok.length>4)frag.append(el("strong",{text:tok.slice(2,-2)}));
+      else frag.append(tok)}});return frag}
+function sysmsg(text){$("log").append(el("div",{class:"msg system",text}));scrollLog()}
+function scrollLog(){const l=$("log");l.scrollTop=l.scrollHeight}
+function rerender(){if(state.local){refreshLocal().catch(()=>{});refreshOnline();refreshChannels()}if(state.active==="ai")renderAi();else openChannel(state.active);prepareAccount()}
+
+// ---------------------------------------------------------------- setup
+function openSetup(step){$("step-server").classList.toggle("hidden",step!=="server");$("step-account").classList.toggle("hidden",step!=="account");if(!$("setup").open)$("setup").showModal()}
+$("server-next").onclick=async()=>{$("server-error").textContent="";try{state.public=await post("/local/connect",{coordinator_url:$("server-url").value});prepareAccount();openSetup("account")}catch(e){$("server-error").textContent=e.message}};
+function prepareAccount(){const p=state.public||{};const reg=p.registration||"off";$("invite-box").classList.toggle("hidden",reg!=="invite");
+  $("reg-note").textContent=reg==="off"?t("regOff"):t("regInfo",{credits:p.signup_credits??0,cost:p.job_cost??5});
+  $("tab-register").disabled=reg==="off";if(reg==="off")selectTab("login")}
+function selectTab(v){$("tab-register").setAttribute("aria-selected",v==="register");$("tab-login").setAttribute("aria-selected",v==="login");$("pane-register").classList.toggle("hidden",v!=="register");$("pane-login").classList.toggle("hidden",v!=="login")}
+$("tab-register").onclick=()=>selectTab("register");$("tab-login").onclick=()=>selectTab("login");
+$("account-back").onclick=()=>openSetup("server");
+$("account-next").onclick=async()=>{$("account-error").textContent="";try{
+  if($("tab-login").getAttribute("aria-selected")==="true")await post("/local/login",{user_token:$("login-token").value});
+  else await post("/local/register",{name:$("reg-name").value.trim(),invite_code:$("reg-invite").value.trim()||null});
+  $("setup").close();await refreshAll();sysmsg(t("signedIn"))}catch(e){$("account-error").textContent=e.message}};
+$("setup").addEventListener("cancel",e=>{if(!state.local||!state.local.signed_in)e.preventDefault()});
+
+// ---------------------------------------------------------------- account
+$("account-btn").onclick=()=>{$("account-info").textContent=state.local&&state.local.signed_in?t("signedInAs",{name:state.local.name||t("noName"),server:state.local.coordinator_url}):t("notSignedIn");$("token-out").classList.add("hidden");$("account").showModal()};
+$("account-close").onclick=()=>$("account").close();
+$("show-token").onclick=async()=>{try{const k=await call("/local/token");$("token-out").textContent=k.user_token;$("token-out").classList.remove("hidden")}catch(e){alert(e.message)}};
+$("logout").onclick=async()=>{if(!confirm(t("confirmLogout")))return;await post("/local/logout");$("account").close();location.reload()};
+$("change-server").onclick=()=>{$("account").close();openSetup("server")};
+
+// ---------------------------------------------------------------- refresh
+async function refreshLocal(){
+  state.local=await call("/local/state");const L=state.local;
+  $("server-text").textContent=L.coordinator_url||t("notConnected");
+  $("whoami").replaceChildren(...(L.name?[label("person",L.name)]:[]));
+  const s=L.settings||{};$("contribute").checked=!!s.contribute;$("backend").value=s.backend||"ollama";
+  for(const k of["cpu_threads","gpu_layers","max_output_tokens","context_tokens"]){const i=$(k);if(document.activeElement!==i){i.value=s[k];$(k+"-v").textContent=s[k]}}
+  $("cpu_threads").max=Math.min(8,L.hardware.cpu_logical||8);$("gpu_layers").disabled=!L.hardware.nvidia_gpu;
+  if(!L.hardware.nvidia_gpu)$("gpu_layers-v").textContent="-";
+  const w=L.worker||{};$("worker-status").textContent=!s.contribute?t("off"):(w.running?(w.job_status==="running"?t("computing"):(w.connected===false?t("noConnection"):t("ready"))):t("stopped"));
+  $("worker-status").className=s.contribute&&w.running&&w.connected!==false?"good":"";
+  $("jobs-done").textContent=w.jobs_completed||0;$("worker-error").textContent=w.error||(s.contribute?(w.last_error||""):"");
+  if(L.machine&&document.activeElement!==$("machine-name"))$("machine-name").value=L.machine.name;
+  const o=L.ollama;$("ollama-note").textContent=s.backend==="mock"?t("mockNote"):(o.available?t("ollamaFound",{n:o.models.length}):t("ollamaMissing"));
+  fillMachineModels();
+}
+function fillMachineModels(){const allowed=(state.public&&state.public.allowed_models)||[];const sel=$("machine-model");const cur=(state.local.machine&&state.local.machine.model)||sel.value;
+  if(sel.options.length!==allowed.length){sel.replaceChildren(...allowed.map(m=>el("option",{value:m,text:m})))}
+  if(cur)sel.value=cur;const o=state.local.ollama;const need=$("backend").value==="ollama"&&o.available&&sel.value&&sel.value!=="demo-model"&&!o.models.includes(sel.value);
+  const pull=state.local.pulls[sel.value];$("pull").classList.toggle("hidden",!need);$("pull").disabled=pull==="running";$("pull").textContent=pull==="running"?t("downloading"):t("downloadModel")}
+async function refreshMe(){if(!state.local||!state.local.signed_in)return;try{state.me=await call("/api/me");const m=state.me;$("credits").textContent=m.credits;$("provisional").textContent=m.provisional_credits;$("earned").textContent=m.earned_credits;$("cost").textContent=m.job_cost;$("server-dot").className="dot on"}catch(e){$("server-dot").className="dot off"}}
+async function refreshPublic(){try{state.public=await call("/api/public/config");const sel=$("model");const cur=sel.value;sel.replaceChildren(...state.public.allowed_models.map(m=>el("option",{value:m,text:m})));if(cur)sel.value=cur;if(state.local)fillMachineModels();markModels()}catch(e){}}
+function markModels(){const models=new Set(state.online.models);for(const opt of $("model").options)opt.textContent=opt.value+" - "+(models.has(opt.value)?t("available"):t("nobodyOnline"))}
+async function refreshOnline(){if(!state.local||!state.local.signed_in)return;try{const o=await call("/api/online");state.online=o;
+  $("online").replaceChildren(...o.machines.map(m=>el("li",{},el("button",{title:`${m.model} - ${m.trust_level}${m.owner?" - "+t("by")+" "+m.owner:""}`,onclick:()=>m.owner&&openDirect(m.owner)},label("machine",m.name),el("span",{class:"muted",text:m.model.split(":")[0]})))),
+    ...o.people.filter(p=>p!==state.local.name).map(p=>el("li",{},el("button",{onclick:()=>openDirect(p),title:t("dm")},label("person",p)))));
+  $("online-note").textContent=t("machinesPeople",{m:o.machines.length,mWord:t(o.machines.length===1?"machine1":"machineN"),p:o.people.length,pWord:t(o.people.length===1?"person1":"personN")});
+  markModels()}catch(e){}}
+async function refreshChannels(){if(!state.local||!state.local.signed_in||!state.local.name)return;try{state.channels=await call("/api/channels");
+  const item=c=>{const unread=c.last_message_id>(state.lastId[c.id]||0)&&state.active!==c.id;return el("li",{},el("button",{"data-channel":c.id,"aria-current":String(state.active===c.id),onclick:()=>openChannel(c.id)},label(c.kind==="lobby"?"lobby":c.kind==="group"?"group":"direct",c.kind==="lobby"?"Lobby":c.name),...(unread?[el("span",{class:"badge",text:t("new")})]:[])))};
+  $("rooms").replaceChildren(...state.channels.filter(c=>c.kind==="lobby").map(item));$("groups").replaceChildren(...state.channels.filter(c=>c.kind==="group").map(item));$("directs").replaceChildren(...state.channels.filter(c=>c.kind==="direct").map(item))}catch(e){}}
+async function refreshAll(){await refreshLocal();if(!state.local.coordinator_url){openSetup("server");return}await refreshPublic();if(!state.local.signed_in){prepareAccount();openSetup("account");return}await Promise.all([refreshMe(),refreshOnline(),refreshChannels()])}
+
+// ---------------------------------------------------------------- channels
+function markNav(){document.querySelectorAll("nav [data-channel]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.channel===state.active)))}
+function renderAi(){$("chat-title").textContent=t("aiChat");$("log").replaceChildren();if(!state.ai.length)sysmsg(t("aiEmpty"));for(const m of state.ai)$("log").append(el("div",{class:"msg"+(m.role==="user"?" mine":"")},el("div",{class:"who",text:m.role==="user"?t("you"):t("ai")+(m.model?" - "+m.model:"")}),m.role==="user"?m.content:md(m.content)));scrollLog()}
+async function openChannel(id){state.active=id;markNav();setView("main");const ai=id==="ai";$("ai-controls").classList.toggle("hidden",!ai);
+  const c=state.channels.find(x=>x.id===id);$("group-controls").classList.toggle("hidden",!c||c.kind!=="group");
+  if(ai){renderAi();return}
+  $("chat-title").textContent=c?(c.kind==="group"?`${c.name} (${c.members.length})`:(c.kind==="lobby"?"Lobby":c.name)):"";
+  $("log").replaceChildren();state.lastId["view:"+id]=0;await pollMessages(true)}
+async function pollMessages(initial){const id=state.active;if(id==="ai")return;const after=initial?0:(state.lastId["view:"+id]||0);
+  try{const msgs=await call(`/api/channels/${encodeURIComponent(id)}/messages?after=${after}`);if(state.active!==id)return;
+   if(initial&&!msgs.length)sysmsg(id==="lobby"?t("lobbyEmpty"):t("noMessages"));
+   for(const m of msgs){$("log").append(el("div",{class:"msg"+(m.author===state.local.name?" mine":"")},el("div",{class:"who",text:`${m.author} - ${new Date(m.created_at).toLocaleTimeString(lang,{hour:"2-digit",minute:"2-digit"})}`}),m.body));state.lastId["view:"+id]=m.id;state.lastId[id]=m.id}
+   if(msgs.length)scrollLog()}catch(e){if(initial)sysmsg(t("error")+": "+e.message)}}
+async function openDirect(name){try{const c=await post("/api/direct",{name});await refreshChannels();openChannel(c.id)}catch(e){alert(e.message)}}
+$("new-dm").onclick=()=>{const n=prompt(t("whoDm"));if(n)openDirect(n.trim())};
+$("new-group").onclick=async()=>{const name=prompt(t("groupName"));if(!name)return;const members=(prompt(t("groupMembers"))||"").split(",").map(s=>s.trim()).filter(Boolean);
+  try{const c=await post("/api/channels",{name,members});await refreshChannels();openChannel(c.id)}catch(e){alert(e.message)}};
+$("add-member").onclick=async()=>{const n=prompt(t("whoAdd"));if(!n)return;try{await post(`/api/channels/${encodeURIComponent(state.active)}/members`,{name:n.trim()});await refreshChannels();openChannel(state.active)}catch(e){alert(e.message)}};
+$("leave-group").onclick=async()=>{if(!confirm(t("confirmLeave")))return;try{await post(`/api/channels/${encodeURIComponent(state.active)}/leave`);await refreshChannels();openChannel("ai")}catch(e){alert(e.message)}};
+document.querySelector('nav [data-channel="ai"]').onclick=()=>openChannel("ai");
+
+// ---------------------------------------------------------------- send
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function askAi(text){const model=$("model").value;const privacy=$("privacy").value;
+  let consented=false;try{consented=!!localStorage.getItem("pz-consent")}catch(e){}
+  if(privacy==="community"&&!consented){if(!confirm(t("consent")))return;try{localStorage.setItem("pz-consent","1")}catch(e){}}
+  state.ai.push({role:"user",content:text});renderAi();const pending=el("div",{class:"msg system",text:t("sending")});$("log").append(pending);scrollLog();
+  const history=state.ai.slice(-15).map(m=>({role:m.role,content:m.content}));
+  try{const job=await post("/api/jobs",{model,privacy,allow_untrusted:privacy==="community",messages:history,max_output_tokens:256});refreshMe();
+    for(let i=0;i<200;i++){await sleep(i<10?1000:3000);const s=await call("/api/jobs/"+job.id);pending.textContent=s.status==="queued"?t("waiting"):t("working");
+      if(s.status==="completed"){state.ai.push({role:"assistant",content:s.output.content,model});renderAi();refreshMe();return}
+      if(s.status==="failed"||s.status==="cancelled"){pending.textContent=t("noAnswer",{reason:s.error||s.status});refreshMe();return}}
+    pending.textContent=t("tooLong")}
+  catch(e){pending.textContent=t("error")+": "+e.message;state.ai.pop()}}
+$("composer").onsubmit=async e=>{e.preventDefault();const text=$("input").value.trim();if(!text)return;$("input").value="";$("send").disabled=true;
+  try{if(state.active==="ai")await askAi(text);else{await post(`/api/channels/${encodeURIComponent(state.active)}/messages`,{body:text});await pollMessages(false)}}catch(err){sysmsg(t("error")+": "+err.message)}finally{$("send").disabled=false;$("input").focus()}};
+$("input").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("composer").requestSubmit()}});
+
+// ---------------------------------------------------------------- my machine
+async function saveSettings(values){try{await post("/local/settings",values);await refreshLocal()}catch(e){alert(e.message)}}
+async function registerMachine(){const name=$("machine-name").value.trim()||t("myComputer");const model=$("machine-model").value;
+  if(!state.local.machine||state.local.machine.model!==model||state.local.machine.name!==name)await post("/local/machine",{name,model})}
+$("contribute").onchange=async()=>{const on=$("contribute").checked;if(on){try{await registerMachine()}catch(e){$("contribute").checked=false;alert(e.message);return}}await saveSettings({contribute:on})};
+$("machine-model").onchange=async()=>{fillMachineModels();if($("contribute").checked){try{await registerMachine()}catch(e){alert(e.message)}await refreshLocal()}};
+$("machine-name").onchange=$("machine-model").onchange;
+$("backend").onchange=()=>saveSettings({backend:$("backend").value});
+for(const k of["cpu_threads","gpu_layers","max_output_tokens","context_tokens"]){$(k).oninput=()=>$(k+"-v").textContent=$(k).value;$(k).onchange=()=>saveSettings({[k]:Number($(k).value)})}
+$("pull").onclick=async()=>{try{await post("/local/ollama/pull",{model:$("machine-model").value});await refreshLocal()}catch(e){alert(e.message)}};
+
+// ---------------------------------------------------------------- mobile
+function setView(v){$("app").dataset.view=v;document.querySelectorAll(".mobile-tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.view===v)))}
+document.querySelectorAll(".mobile-tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+
+// ---------------------------------------------------------------- loops
+(async()=>{try{await refreshAll()}catch(e){sysmsg(t("appUnreachable",{msg:e.message}))}renderAi()})();
+setInterval(()=>refreshLocal().catch(()=>{}),5000);
+setInterval(refreshMe,8000);setInterval(refreshOnline,15000);setInterval(refreshChannels,10000);
+setInterval(()=>pollMessages(false),3000);
+</script>
+</body>
+</html>

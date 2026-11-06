@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Community AI Grid — Labor</title><style>
+body{font:16px system-ui,sans-serif;max-width:820px;margin:2.5rem auto;padding:0 1rem;line-height:1.5;color:#17212f;background:#f7f9fc}
+main{background:white;border-radius:16px;padding:1.5rem;box-shadow:0 4px 22px #ddd;margin-bottom:1.5rem}textarea,input,select,button{box-sizing:border-box;padding:.7rem;border:1px solid #a5b1c1;border-radius:8px;font:inherit;width:100%}textarea{min-height:100px}.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}label{display:block;margin:1rem 0 .25rem}button{background:#2856d9;color:white;margin-top:1rem;cursor:pointer;border:0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#edf1f7;border-radius:8px;padding:1rem}small{color:#4f5a6b}header{font-weight:700;font-size:1.6rem}h2{font-size:1.1rem;margin:0 0 .5rem} .warning{padding:.8rem;background:#fff4cf;border-radius:8px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;margin-top:.75rem}.stat{background:#edf1f7;border-radius:8px;padding:.75rem;text-align:center}.stat b{display:block;font-size:1.4rem}
+</style></head><body><main><header>Community AI Grid · Labor</header>
+<p class="warning">Nur für ein isoliertes Testnetz. Prompts werden derzeit im Koordinator im Klartext gespeichert. Keine vertraulichen Daten eingeben.</p>
+<label>Testnutzer-Schlüssel (nur im Arbeitsspeicher dieser Seite)</label><input id="key" type="password" autocomplete="off" placeholder="CAG_USER_KEY">
+<div class="row"><div><label>Modellname</label><input id="model" value="demo-model"></div><div><label>Verarbeitung</label><select id="privacy"><option value="trusted">Vertrauenswürdige Worker</option><option value="community">Community (nicht vertraulich)</option></select></div></div>
+<label>Nachricht</label><textarea id="prompt" placeholder="Testanfrage eingeben"></textarea>
+<button id="send">Anfrage starten</button><p id="status" aria-live="polite"></p><pre id="answer" hidden></pre>
+<p><small>Hinweis: Für den Community-Modus wird die Freigabe an unbekannte Worker ausdrücklich bestätigt. Es gibt noch keine unabhängige Ergebnisverifikation oder private Inferenz.</small></p>
+</main>
+
+<main>
+<h2>Als Community-Worker beitreten (Spike)</h2>
+<p class="warning">Experimentell: Jeder mit einem gültigen Code kann sich hier als nicht vertrauenswürdiger
+(<code>community</code>) Worker anmelden. Erhält Worker- und Nutzer-Token direkt — kein Admin-Schritt auf
+dem Coordinator-Host nötig. Den Code bekommst du vom Betreiber.</p>
+<div class="row"><div><label>Einmal-Code</label><input id="enroll-code" placeholder="1234567890.abcdef..."></div>
+<div><label>Gerätename</label><input id="enroll-name" placeholder="mein-laptop"></div></div>
+<label>Modell</label><select id="enroll-model"></select>
+<button id="enroll-btn">Aktivieren</button>
+<p id="enroll-status" aria-live="polite"></p>
+<pre id="enroll-result" hidden></pre>
+</main>
+
+<main>
+<h2>Statistiken</h2>
+<div class="stats" id="stats">lädt…</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);const pause=ms=>new Promise(r=>setTimeout(r,ms));
+const req=async(path,options={})=>{let r=await fetch(path,{...options,headers:{'Authorization':'Bearer '+$('key').value,'Content-Type':'application/json'}});let x=await r.json();if(!r.ok)throw Error(x.detail?JSON.stringify(x.detail):r.status);return x};
+$('send').addEventListener('click',async()=>{const btn=$('send');btn.disabled=true;$('answer').hidden=true;$('status').textContent='Anfrage wird eingereiht...';
+try{const privacy=$('privacy').value;const consent=privacy!=='community'||confirm('Deine Anfrage wird an Community-Worker übermittelt, die den gesamten Prompt sehen können. Fortfahren?');if(!consent)return;
+const j=await req('/api/jobs',{method:'POST',body:JSON.stringify({model:$('model').value,privacy,allow_untrusted:privacy==='community',messages:[{role:'user',content:$('prompt').value}]})});
+for(let i=0;i<120;i++){let state=await req('/api/jobs/'+j.id);$('status').textContent='Job '+j.id+' · '+state.status;
+if(state.status==='completed'||state.status==='failed'||state.status==='cancelled'){$('answer').hidden=false;$('answer').textContent=state.status==='completed'?state.output.content:state.error;return}await pause(3000)}$('status').textContent='Zeitlimit der Oberfläche erreicht. Job-ID: '+j.id;
+}catch(e){$('status').textContent='Fehler: '+e.message}finally{btn.disabled=false}});
+
+fetch('/api/public/config').then(r=>r.json()).then(c=>{$('enroll-model').innerHTML=c.allowed_models.map(m=>`<option>${m}</option>`).join('')}).catch(()=>{});
+
+$('enroll-btn').addEventListener('click',async()=>{const btn=$('enroll-btn');btn.disabled=true;$('enroll-result').hidden=true;$('enroll-status').textContent='Aktiviere...';
+try{
+  const r=await fetch('/api/enroll',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({code:$('enroll-code').value,name:$('enroll-name').value,model:$('enroll-model').value})});
+  const x=await r.json();if(!r.ok)throw Error(x.detail?JSON.stringify(x.detail):r.status);
+  $('enroll-status').textContent='Aktiviert als Community-Worker "'+x.name+'".';
+  $('enroll-result').hidden=false;
+  $('enroll-result').textContent='CAG_WORKER_TOKEN='+x.worker_token+'\nCAG_USER_TOKEN='+x.user_token+
+    '\nCAG_MODEL='+x.model+'\nCAG_COORD_URL=<Adresse dieses Coordinators, z.B. die URL aus deiner Adressleiste>\n\n'+
+    'Jetzt sichern (wird nicht erneut angezeigt), dann "python -m worker.client" mit diesen Werten starten.';
+}catch(e){$('enroll-status').textContent='Fehler: '+e.message}finally{btn.disabled=false}});
+
+const loadStats=()=>fetch('/api/stats').then(r=>r.json()).then(s=>{
+  const workers=Object.entries(s.active_workers).map(([k,v])=>`<div class="stat"><b>${v}</b>${k}</div>`).join('');
+  const jobs=Object.entries(s.jobs).map(([k,v])=>`<div class="stat"><b>${v}</b>${k}</div>`).join('');
+  $('stats').innerHTML=(workers||'<div class="stat"><b>0</b>Worker</div>')+(jobs||'');
+}).catch(()=>{$('stats').textContent='Statistik nicht verfügbar.'});
+loadStats();setInterval(loadStats,10000);
+</script></body></html>

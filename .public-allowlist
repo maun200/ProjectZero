@@ -1,0 +1,16 @@
+# Known-fine matches for scripts/check_public_tree.py: <glob><TAB><regex>. Keep entries narrow.
+# Documentation placeholder addresses
+README.md	^192\.168\.1\.10$
+README.de.md	^192\.168\.1\.10$
+projectzero/static/index.html	^192\.168\.1\.10$
+projectzero/config.py	^(192\.168\.1\.10|100\.64\.0\.0)$
+# Unroutable address used only to pick the outgoing interface (no packet is sent)
+projectzero/cli.py	^10\.255\.255\.255$
+# FIDO2 SSH key type names, not email addresses
+scripts/grid_device.py	^sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\.com$
+# The scanner's own patterns and its synthetic test data
+scripts/check_public_tree.py	^(/mnt/|/root/|pve|-----BEGIN ?)$
+tests/test_check_public_tree.py	^(/mnt/|/root/|pve|-----BEGIN ?|tail0abc12)$
+tests/test_client_app.py	^(192\.168\.1\.5|100\.100\.1\.2|10\.0\.0\.1)$
+tests/test_worker.py	^127\.0\.0\.1@remote\.example$
+.public-allowlist	^(/mnt/|/root/|pve|tail0abc12|-----BEGIN ?)$

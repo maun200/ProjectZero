@@ -1,0 +1,42 @@
+services:
+  coordinator:
+    build: .
+    image: community-ai-grid/coordinator:local
+    restart: unless-stopped
+    environment:
+      CAG_ADMIN_KEY: ${CAG_ADMIN_KEY:?Set CAG_ADMIN_KEY in .env}
+      CAG_USER_KEY: ${CAG_USER_KEY:?Set CAG_USER_KEY in .env}
+      CAG_DB_PATH: /data/grid.sqlite3
+      CAG_INITIAL_DEMO_CREDITS: ${CAG_INITIAL_DEMO_CREDITS:-100}
+      CAG_ALLOWED_MODELS: ${CAG_ALLOWED_MODELS:-demo-model}
+      CAG_LEASE_SECONDS: ${CAG_LEASE_SECONDS:-180}
+      CAG_RATE_LIMIT_PER_MINUTE: ${CAG_RATE_LIMIT_PER_MINUTE:-120}
+      CAG_QUEUE_TIMEOUT_SECONDS: ${CAG_QUEUE_TIMEOUT_SECONDS:-3600}
+      CAG_SWEEP_SECONDS: ${CAG_SWEEP_SECONDS:-30}
+      CAG_ENROLL_IP_PER_MINUTE: ${CAG_ENROLL_IP_PER_MINUTE:-5}
+      CAG_REGISTRATION: ${CAG_REGISTRATION:-off}
+      CAG_SIGNUP_CREDITS: ${CAG_SIGNUP_CREDITS:-20}
+      CAG_AUTO_SETTLE: ${CAG_AUTO_SETTLE:-false}
+      CAG_REGISTER_PER_HOUR: ${CAG_REGISTER_PER_HOUR:-10}
+      CAG_MAX_MACHINES_PER_MEMBER: ${CAG_MAX_MACHINES_PER_MEMBER:-5}
+    ports:
+      - "${CAG_BIND_IP:-127.0.0.1}:8765:8765"
+    volumes:
+      - cag-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    mem_limit: 768m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  cag-data:

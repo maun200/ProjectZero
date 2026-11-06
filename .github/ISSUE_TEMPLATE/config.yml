@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas (Discussions)
+    url: https://github.com/maun200/ProjectZero/discussions
+    about: Questions, ideas or general conversation that is not a concrete bug or feature.
+  - name: Security vulnerability
+    url: https://github.com/maun200/ProjectZero/security/advisories/new
+    about: Please report security problems privately, never in a public issue.

@@ -1,0 +1,43 @@
+name: Bug report
+description: Something does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please do **not** paste tokens, access keys, real IP addresses or
+        host names, or prompt contents. Security problems belong in a private vulnerability
+        report (Security tab), not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw versus what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps or commands that triggers the problem.
+      placeholder: |
+        1. projectzero demo
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error messages
+      description: Only the relevant lines, without tokens, secrets or prompts.
+      render: shell
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and Python version
+      placeholder: e.g. Windows 11, Python 3.12
+  - type: input
+    id: version
+    attributes:
+      label: ProjectZero version or commit
+      placeholder: output of `projectzero --version`

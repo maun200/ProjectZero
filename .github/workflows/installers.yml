@@ -1,0 +1,46 @@
+name: installers
+# Runs the real one-line installers on Linux, macOS and Windows against this checkout,
+# then drives the installed app through a full mock job (scripts/installer_smoke.py).
+on:
+  push:
+    paths: ["install.sh", "install.ps1", "projectzero/**", "worker/**", "coordinator/**", "pyproject.toml",
+            "scripts/installer_smoke.py", ".github/workflows/installers.yml"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install with install.sh
+        run: PROJECTZERO_SOURCE="$GITHUB_WORKSPACE" PROJECTZERO_NO_START=1 sh install.sh
+      - name: Smoke test the installed app
+        run: ~/.local/share/projectzero/venv/bin/python scripts/installer_smoke.py ~/.local/bin/projectzero
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install with install.ps1
+        shell: pwsh
+        run: |
+          $env:PROJECTZERO_SOURCE = $env:GITHUB_WORKSPACE
+          $env:PROJECTZERO_NO_START = "1"
+          ./install.ps1
+      - name: Smoke test the installed app
+        shell: pwsh
+        run: |
+          $venv = Join-Path $env:LOCALAPPDATA "ProjectZero\venv\Scripts"
+          & (Join-Path $venv "python.exe") scripts/installer_smoke.py (Join-Path $venv "projectzero.exe")
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

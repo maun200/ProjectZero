@@ -1,0 +1,28 @@
+[project]
+name = "projectzero"
+version = "0.3.0"
+description = "Teile die Rechenleistung deiner PCs für KI – Chat, Credits und Gruppen in einer kleinen lokalen App"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "maun200" }]
+requires-python = ">=3.11"
+dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "pydantic>=2,<3"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+gui = ["pystray>=0.19,<1", "Pillow>=10,<12", "psutil>=6,<7"]
+
+[project.scripts]
+cag-worker = "worker.client:main"
+projectzero = "projectzero.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: multi-process tests (>20 s)"]
+
+[tool.setuptools.packages.find]
+include = ["coordinator*", "worker*", "projectzero*"]
+
+[tool.setuptools.package-data]
+"coordinator.app" = ["*.html"]
+"projectzero" = ["static/*"]

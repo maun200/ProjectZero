@@ -1,0 +1,51 @@
+name: Device / performance report
+description: Tell us how a machine performs as a worker
+labels: ["device-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Device reports help everyone choose models and settings. Please leave out host names,
+        IP addresses and anything else that identifies you or your network.
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Ubuntu 24.04, Windows 11, macOS 15
+    validations:
+      required: true
+  - type: input
+    id: cpu
+    attributes:
+      label: CPU
+      placeholder: e.g. Intel Core i5-10210U, 8 threads
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU (if any) and VRAM
+      placeholder: e.g. none, or NVIDIA GTX 1660 6 GB
+  - type: input
+    id: ram
+    attributes:
+      label: RAM
+      placeholder: e.g. 8 GB
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model and settings
+      placeholder: e.g. qwen2.5-coder:1.5b, 4 CPU threads, 0 GPU layers, context 2048
+    validations:
+      required: true
+  - type: input
+    id: speed
+    attributes:
+      label: Measured speed
+      placeholder: e.g. about 17 tokens/s output
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes (temperature, noise, stability, problems)

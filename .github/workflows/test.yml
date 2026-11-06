@@ -1,0 +1,39 @@
+name: tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -r requirements.lock
+      - run: python -m pip install --no-deps -e .
+      - run: python -m pytest -q
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install ruff
+      # Critical errors only (syntax, undefined names, bad comparisons) — not a style gate.
+      - run: ruff check --select E9,F63,F7,F82 .
+  privacy:
+    # Blocking in the public repository; the private lab archive keeps notes that would fail it.
+    if: github.repository == 'maun200/ProjectZero'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # Tree only (no --history): checks the files as committed, not every past commit's diff.
+      - run: python scripts/check_public_tree.py

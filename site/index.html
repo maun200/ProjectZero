@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ProjectZero: pool spare computers into a small AI grid, chat with AI, earn credits by sharing compute, and talk to your group.">
+<title>ProjectZero</title>
+<style>
+:root{
+  --bg:#f4f6fa;--panel:#fff;--soft:#eef1f6;--line:#d9dee7;--text:#18202c;--muted:#5a6578;
+  --accent:#2a5bd7;--accent-text:#fff;--good:#1d7a46;--warn:#9a5b00;--bad:#b42318;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1e2125;--panel:#262a2f;--soft:#2f343a;--line:#3a4047;--text:#e4e7eb;--muted:#a3aab4;
+    --accent:#7ea6ff;--accent-text:#10141c;--good:#5cc98d;--warn:#e3ad52;--bad:#ff8378;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1e2125;--panel:#262a2f;--soft:#2f343a;--line:#3a4047;--text:#e4e7eb;--muted:#a3aab4;
+  --accent:#7ea6ff;--accent-text:#10141c;--good:#5cc98d;--warn:#e3ad52;--bad:#ff8378;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--soft);
+  border-radius:8px;padding:.45rem .75rem}
+button:hover{background:var(--line)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.ico{width:1.1em;height:1.1em;flex:none;vertical-align:-.15em;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.wrap{max-width:860px;margin:0 auto;padding-block:1.2rem 3rem}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-size:clamp(1.9rem,6vw,2.7rem);line-height:1.1;margin-bottom:.6rem}
+h2{font-size:clamp(1.25rem,4vw,1.5rem);margin-bottom:.9rem}
+h3{font-size:1.05rem;margin:.5rem 0 .35rem}
+p{color:var(--muted)}
+section{margin-top:3rem}
+
+/* header */
+.site-header{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;padding-block:1rem;
+  border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.1rem;color:var(--text)}
+.logo .ico{width:1.5em;height:1.5em;color:var(--accent)}
+.top-links{display:flex;gap:1rem;flex-wrap:wrap;margin-left:.25rem}
+.top-links a{display:inline-flex;align-items:center;gap:.35rem;color:var(--muted);text-decoration:none;font-size:.92rem}
+.top-links a:hover{color:var(--text)}
+.spacer{flex:1 1 auto}
+.toggles{display:flex;gap:.5rem;flex-wrap:wrap}
+.toggles button{display:flex;align-items:center;gap:.4rem;font-size:.88rem}
+
+/* hero */
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.75rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--accent);border:1px solid var(--line);border-radius:999px;
+  padding:.3rem .65rem;background:var(--panel);margin:1.4rem 0 .9rem}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--good)}
+.hero p.sub{font-size:1.08rem;color:var(--text);max-width:40em}
+.hero-shot{margin-top:1.4rem;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  background:var(--soft);min-height:4rem}
+.hero-shot img{display:block;width:100%;height:auto}
+
+/* feature cards */
+.grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+@media (max-width:620px){.grid4{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.1rem}
+.card .card-ico{display:block;width:1.6em;height:1.6em;color:var(--accent);margin-bottom:.5rem}
+.card p{font-size:.92rem;margin:0}
+
+/* install / demo */
+.tabs{display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem;
+  overflow-x:auto;margin:0}
+code{font-family:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;font-size:.88rem}
+.cmd-row{display:flex;gap:.6rem;align-items:flex-start;flex-wrap:wrap;margin-top:.6rem}
+.cmd-row pre{flex:1 1 20rem;min-width:0}
+.copy-btn{display:flex;align-items:center;gap:.4rem;font-size:.88rem;flex:none}
+
+/* limits / honesty box */
+.limits{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--bad);
+  border-radius:0 14px 14px 0;padding:1.1rem 1.3rem}
+.limits h2{display:flex;align-items:center;gap:.5rem;font-size:1.1rem}
+.limits ul{margin:.4rem 0 0;padding-left:1.2rem;font-size:.92rem;color:var(--muted)}
+.limits li{margin-bottom:.45rem}
+
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="logo"><span data-icon="logo"></span><span>ProjectZero</span></div>
+  <nav class="top-links" aria-label="Project links">
+    <a href="https://github.com/maun200/ProjectZero" target="_blank" rel="noopener"><span data-icon="link"></span>GitHub</a>
+    <a href="https://github.com/maun200/ProjectZero/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener"><span data-icon="link"></span>Contributing</a>
+    <a href="https://github.com/maun200/ProjectZero/blob/main/docs/SECURITY.md" target="_blank" rel="noopener"><span data-icon="link"></span>Security</a>
+  </nav>
+  <span class="spacer"></span>
+  <div class="toggles">
+    <button id="lang-btn" aria-label="Switch language"><span data-icon="lang"></span><span id="lang-label">English</span></button>
+    <button id="theme-btn" aria-label="Switch theme"><span data-icon="theme"></span><span id="theme-label">System</span></button>
+  </div>
+</header>
+
+<div class="wrap">
+<main id="content">
+
+  <section class="hero" style="margin-top:0">
+    <p class="eyebrow" data-i18n="eyebrow"></p>
+    <h1>ProjectZero</h1>
+    <p class="sub" data-i18n="pitch"></p>
+    <div class="hero-shot">
+      <img src="docs/img/app-dark.png" alt="" data-i18n-alt="screenshotAlt" loading="lazy"
+           onerror="this.closest('.hero-shot').style.display='none'">
+    </div>
+  </section>
+
+  <section aria-labelledby="features-h">
+    <h2 id="features-h" data-i18n="featuresTitle"></h2>
+    <div class="grid4">
+      <article class="card">
+        <span class="card-ico" data-icon="ai"></span>
+        <h3 data-i18n="f1h"></h3>
+        <p data-i18n="f1p"></p>
+      </article>
+      <article class="card">
+        <span class="card-ico" data-icon="sliders"></span>
+        <h3 data-i18n="f2h"></h3>
+        <p data-i18n="f2p"></p>
+      </article>
+      <article class="card">
+        <span class="card-ico" data-icon="group"></span>
+        <h3 data-i18n="f3h"></h3>
+        <p data-i18n="f3p"></p>
+      </article>
+      <article class="card">
+        <span class="card-ico" data-icon="server"></span>
+        <h3 data-i18n="f4h"></h3>
+        <p data-i18n="f4p"></p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="install-h">
+    <h2 id="install-h" data-i18n="installTitle"></h2>
+    <div class="tabs" role="tablist" aria-label="Install command for your OS">
+      <button role="tab" aria-selected="true" id="tab-unix" aria-controls="pane-unix" data-i18n="tabUnix"></button>
+      <button role="tab" aria-selected="false" id="tab-win" aria-controls="pane-win" data-i18n="tabWin"></button>
+    </div>
+    <div id="pane-unix" role="tabpanel" aria-labelledby="tab-unix">
+      <div class="cmd-row">
+        <pre><code id="cmd-unix">curl -fsSL https://raw.githubusercontent.com/maun200/ProjectZero/main/install.sh | sh</code></pre>
+        <button class="copy-btn" data-copy="cmd-unix"><span data-icon="copy"></span><span data-i18n="copy"></span></button>
+      </div>
+    </div>
+    <div id="pane-win" role="tabpanel" aria-labelledby="tab-win" hidden>
+      <div class="cmd-row">
+        <pre><code id="cmd-win">irm https://raw.githubusercontent.com/maun200/ProjectZero/main/install.ps1 | iex</code></pre>
+        <button class="copy-btn" data-copy="cmd-win"><span data-icon="copy"></span><span data-i18n="copy"></span></button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="demo-h">
+    <h2 id="demo-h" data-i18n="demoTitle"></h2>
+    <p data-i18n="demoText"></p>
+    <div class="cmd-row">
+      <pre><code id="cmd-demo">projectzero demo</code></pre>
+      <button class="copy-btn" data-copy="cmd-demo"><span data-icon="copy"></span><span data-i18n="copy"></span></button>
+    </div>
+  </section>
+
+  <section class="limits" aria-labelledby="limits-h">
+    <h2 id="limits-h"><span data-icon="shield"></span><span data-i18n="limitsTitle"></span></h2>
+    <ul>
+      <li data-i18n="limit1"></li>
+      <li data-i18n="limit2"></li>
+      <li data-i18n="limit3"></li>
+      <li data-i18n="limit4"></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <p data-i18n="footer"></p>
+</footer>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+
+const ICONS={
+ logo:'<circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="12" cy="12" r="2.5"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M6.6 6.6l3.6 3.6M17.4 6.6l-3.6 3.6M6.6 17.4l3.6-3.6M17.4 17.4l-3.6-3.6"/>',
+ ai:'<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/><path d="M10 10h4v4h-4z"/>',
+ group:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.2c2.9.2 5 2.6 5 5.8"/>',
+ server:'<rect x="4" y="4" width="16" height="5" rx="1.2"/><rect x="4" y="10" width="16" height="5" rx="1.2"/><rect x="4" y="16" width="16" height="4" rx="1.2"/>',
+ sliders:'<path d="M4 7h8M16 7h4M4 17h12M20 17h0"/><circle cx="14" cy="7" r="2.2"/><circle cx="18" cy="17" r="2.2"/>',
+ theme:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ lang:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z"/>',
+ link:'<path d="M14 5h5v5"/><path d="M19 5l-9 9"/><path d="M8 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/>',
+ shield:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/>',
+ copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+ check:'<path d="M5 12l5 5L20 7"/>'};
+function icon(name){const s=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  s.setAttribute("viewBox","0 0 24 24");s.setAttribute("class","ico");s.setAttribute("aria-hidden","true");
+  s.innerHTML=ICONS[name]||"";return s}
+document.querySelectorAll("[data-icon]").forEach(n=>n.replaceWith(icon(n.dataset.icon)));
+
+const STR={
+ en:{
+  eyebrow:"Experimental · early alpha",
+  pitch:"Pool spare PCs into a small AI grid: chat with AI, earn credits by sharing compute, and talk to your group.",
+  screenshotAlt:"Screenshot of the ProjectZero chat app in anthracite dark mode, showing the AI chat, channel list and credits panel.",
+  featuresTitle:"What you get",
+  f1h:"AI chat, paid in credits", f1p:"Ask questions in a chat window; each answer is computed by a machine in the grid and costs a few credits.",
+  f2h:"Share your compute, your way", f2p:"Sliders control CPU threads, GPU layers, context length and reply length — your machine, your limits.",
+  f3h:"Lobby, group & direct chat", f3p:"Talk to everyone in the lobby, start a group, or message one person directly — independent of the AI chat.",
+  f4h:"Self-host your own server", f4p:"Run the coordinator yourself with one command and invite your own people — no central company required.",
+  installTitle:"Install", tabUnix:"Linux / macOS", tabWin:"Windows (PowerShell)", copy:"Copy", copied:"Copied",
+  demoTitle:"Try it without AI",
+  demoText:"No model, no credits spent — just the chat interface and the local app, so you can see how it feels before connecting a real machine.",
+  limitsTitle:"Good to know",
+  limit1:"Experimental software — things will break and change.",
+  limit2:"Your requests are readable by the machine that computes them and by the server operator — no end-to-end encryption.",
+  limit3:"Credits are a point system, not money — they can't be exchanged for cash.",
+  limit4:"No model splitting yet — one machine computes a whole request, not several together.",
+  footer:"ProjectZero — experimental, community-run. Started by maun200.",
+  langLabel:"English", themeLabel:{system:"System", light:"Light", dark:"Anthracite"}
+ },
+ de:{
+  eyebrow:"Experimentell · frühe Alphaphase",
+  pitch:"Bündle übrige Rechner zu einem kleinen KI-Grid: mit KI chatten, durch geteilte Rechenleistung Credits verdienen und mit deiner Gruppe sprechen.",
+  screenshotAlt:"Screenshot der ProjectZero-Chat-App im anthrazitfarbenen Dunkelmodus mit KI-Chat, Kanalliste und Credits-Panel.",
+  featuresTitle:"Was du bekommst",
+  f1h:"KI-Chat, bezahlt mit Credits", f1p:"Stelle Fragen in einem Chat-Fenster; jede Antwort wird von einer Maschine im Grid berechnet und kostet ein paar Credits.",
+  f2h:"Teile deine Rechenleistung, wie du willst", f2p:"Regler steuern CPU-Threads, GPU-Schichten, Kontextlänge und Antwortlänge — deine Maschine, deine Grenzen.",
+  f3h:"Lobby-, Gruppen- und Direktchat", f3p:"Sprich mit allen in der Lobby, starte eine Gruppe oder schreibe direkt mit einer Person — unabhängig vom KI-Chat.",
+  f4h:"Deinen eigenen Server selbst hosten", f4p:"Starte den Koordinator selbst mit einem Befehl und lade deine eigenen Leute ein — ohne zentrales Unternehmen.",
+  installTitle:"Installation", tabUnix:"Linux / macOS", tabWin:"Windows (PowerShell)", copy:"Kopieren", copied:"Kopiert",
+  demoTitle:"Ausprobieren ohne KI",
+  demoText:"Kein Modell, keine verbrauchten Credits — nur die Chat-Oberfläche und die lokale App, um ein Gefühl dafür zu bekommen, bevor du eine echte Maschine anschließt.",
+  limitsTitle:"Gut zu wissen",
+  limit1:"Experimentelle Software — Dinge werden kaputt gehen und sich ändern.",
+  limit2:"Deine Anfragen sind für die rechnende Maschine und den Server-Betreiber lesbar — keine Ende-zu-Ende-Verschlüsselung.",
+  limit3:"Credits sind ein Punktesystem, kein Geld — sie lassen sich nicht in echtes Geld eintauschen.",
+  limit4:"Noch kein Modell-Splitting — eine Maschine berechnet eine ganze Anfrage, nicht mehrere gemeinsam.",
+  footer:"ProjectZero — experimentell, von der Community betrieben. Gestartet von maun200.",
+  langLabel:"Deutsch", themeLabel:{system:"System", light:"Hell", dark:"Anthrazit"}
+ }
+};
+
+let lang="en";try{lang=localStorage.getItem("pz-lang")||"en"}catch(e){}
+function applyLang(l){
+  lang=(l==="de")?"de":"en";
+  document.documentElement.lang=lang;
+  const s=STR[lang];
+  document.querySelectorAll("[data-i18n]").forEach(n=>{n.textContent=s[n.dataset.i18n]||""});
+  document.querySelectorAll("[data-i18n-alt]").forEach(n=>{n.alt=s[n.dataset.i18nAlt]||""});
+  $("lang-label").textContent=s.langLabel;
+  $("theme-label").textContent=s.themeLabel[theme];
+  try{localStorage.setItem("pz-lang",lang)}catch(e){}
+}
+$("lang-btn").onclick=()=>applyLang(lang==="en"?"de":"en");
+
+const THEMES=["system","light","dark"];
+let theme="system";try{theme=localStorage.getItem("pz-theme")||"system"}catch(e){}
+function applyTheme(t){
+  theme=THEMES.includes(t)?t:"system";
+  if(theme==="system")document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme",theme);
+  $("theme-label").textContent=STR[lang].themeLabel[theme];
+  try{localStorage.setItem("pz-theme",theme)}catch(e){}
+}
+$("theme-btn").onclick=()=>applyTheme(THEMES[(THEMES.indexOf(theme)+1)%3]);
+
+applyTheme(theme);
+applyLang(lang);
+
+// install tabs
+function selectTab(which){
+  const unix=which==="unix";
+  $("tab-unix").setAttribute("aria-selected",String(unix));
+  $("tab-win").setAttribute("aria-selected",String(!unix));
+  $("pane-unix").hidden=!unix;
+  $("pane-win").hidden=unix;
+}
+$("tab-unix").onclick=()=>selectTab("unix");
+$("tab-win").onclick=()=>selectTab("win");
+
+// copy buttons
+document.querySelectorAll(".copy-btn").forEach(btn=>{
+  const srcId=btn.dataset.copy;
+  btn.addEventListener("click",async()=>{
+    const text=$(srcId).textContent;
+    const label=btn.querySelector("[data-i18n]");
+    const original=label?label.textContent:"";
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      try{
+        const r=document.createRange();r.selectNodeContents($(srcId));
+        const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);
+      }catch(e2){}
+    }
+    if(label){label.textContent=STR[lang].copied;setTimeout(()=>{label.textContent=STR[lang].copy},1500)}
+  });
+});
+</script>
+</body>
+</html>
