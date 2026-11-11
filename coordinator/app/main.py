@@ -235,6 +235,10 @@ class WorkerIn(BaseModel):
     trust_level: Literal["trusted", "community"] = "trusted"
 
 
+class WorkerModelIn(BaseModel):
+    model: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_.:-]+$")
+
+
 class EnrollCodeIn(BaseModel):
     ttl_seconds: int = Field(default=3600, ge=60, le=86400)
 
@@ -574,6 +578,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             db.commit()
         return {"worker_id": worker_id, "worker_token": token,
                 "warning": "Worker token shown once. Store securely. Never commit to Git."}
+
+    @app.post("/api/admin/workers/{worker_id}/model", dependencies=[Depends(admin)])
+    def retag(worker_id: str, payload: WorkerModelIn):
+        """Move a worker to a different operator-approved model, in place.
+
+        Identity, token and credit history are untouched (unlike remove+add) so an operator can
+        resize a device's model without reissuing its worker token or losing its trust/credit
+        history. The device's own CAG_MODEL setting lives in its local worker.env, not here — the
+        operator still has to edit that file on the device and restart it to match.
+        """
+        approved(payload.model)
+        with database.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT revoked_at FROM workers WHERE id=?", (worker_id,)).fetchone()
+            if row is None:
+                db.rollback()
+                raise HTTPException(404, "Unknown worker")
+            if row["revoked_at"]:
+                db.rollback()
+                raise HTTPException(409, "Worker revoked")
+            db.execute("UPDATE workers SET model=? WHERE id=?", (payload.model, worker_id))
+            db.commit()
+        return {"worker_id": worker_id, "model": payload.model}
 
     @app.post("/api/admin/workers/{worker_id}/settle", dependencies=[Depends(admin)])
     def settle(worker_id: str, payload: Settlement):

@@ -127,6 +127,25 @@ def test_add_revokes_token_when_key_cannot_be_written(tmp_path, monkeypatch):
     assert not (args.state / "registry.json").exists()
 
 
+def test_update_switches_model_and_updates_registry_without_a_new_token(tmp_path):
+    args, seen = make_args(tmp_path), []
+    with coordinator(seen) as client:
+        grid_device.add(args, client, "http://127.0.0.1:8765", "a")
+        result = grid_device.update(make_args(tmp_path, model="qwen2.5-coder:7b-instruct"), client,
+                                    "http://127.0.0.1:8765", "a")
+    assert result == {"device": "laptop", "worker_id": "w1", "model": "qwen2.5-coder:7b-instruct"}
+    assert seen[-1] == ("POST", "/api/admin/workers/w1/model", "Bearer a",
+                        {"model": "qwen2.5-coder:7b-instruct"})
+    assert grid_device.load_registry(args.state)["laptop"] == {
+        "worker_id": "w1", "model": "qwen2.5-coder:7b-instruct", "trust_level": "trusted"}
+
+
+def test_update_rejects_unknown_device_without_calling_the_coordinator(tmp_path):
+    with coordinator([]) as client:
+        with pytest.raises(ValueError, match="Unknown device"):
+            grid_device.update(make_args(tmp_path, name="ghost"), client, "http://127.0.0.1:8765", "a")
+
+
 def test_remove_deletes_key_bundle_and_revokes(tmp_path):
     args, seen = make_args(tmp_path), []
     with coordinator(seen) as client:
