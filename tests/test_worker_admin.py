@@ -7,6 +7,10 @@ def revoke(api, worker_id, token=ADMIN):
     return api.post(f"/api/admin/workers/{worker_id}/revoke", headers=auth(token))
 
 
+def retag(api, worker_id, model, token=ADMIN):
+    return api.post(f"/api/admin/workers/{worker_id}/model", headers=auth(token), json={"model": model})
+
+
 def test_revoked_worker_token_is_rejected(api):
     w = enroll_full(api, "gone")
     r = revoke(api, w["id"])
@@ -72,6 +76,46 @@ def test_rotate_rejects_unknown_and_revoked(api):
     assert api.post("/api/admin/workers/nope/rotate", headers=auth(ADMIN)).status_code == 404
     revoke(api, w["id"])
     assert api.post(f"/api/admin/workers/{w['id']}/rotate", headers=auth(ADMIN)).status_code == 409
+
+
+def test_retag_switches_which_jobs_the_worker_can_claim(make_api):
+    api = make_api(allowed_models=("demo-model", "other-model"))
+    w = enroll_full(api, "switchable")
+    old_job = submit(api, model="demo-model").json()["id"]
+    r = retag(api, w["id"], "other-model")
+    assert r.status_code == 200
+    assert r.json() == {"worker_id": w["id"], "model": "other-model"}
+    # Same token still authenticates, but the old-model job is no longer offered to it.
+    assert api.post("/api/worker/claim", headers=auth(w["worker_token"])).json()["job"] is None
+    new_job = submit(api, model="other-model").json()["id"]
+    claimed = api.post("/api/worker/claim", headers=auth(w["worker_token"])).json()["job"]
+    assert claimed["id"] == new_job and claimed["id"] != old_job
+
+
+def test_retag_keeps_identity_trust_and_credits_untouched(api):
+    w = enroll_full(api, "stable-identity")
+    before = api.get("/api/admin/workers", headers=auth(ADMIN)).json()[0]
+    retag(api, w["id"], "demo-model")  # same model: still exercises the identity-preserving path
+    after = api.get("/api/admin/workers", headers=auth(ADMIN)).json()[0]
+    assert after["id"] == before["id"] and after["trust_level"] == before["trust_level"]
+    assert after["provisional_credits"] == before["provisional_credits"]
+    # The worker token itself never changed, unlike /rotate.
+    assert api.post("/api/worker/claim", headers=auth(w["worker_token"])).status_code == 200
+
+
+def test_retag_rejects_unapproved_model(api):
+    w = enroll_full(api, "picky")
+    r = retag(api, w["id"], "some-other-model")
+    assert r.status_code == 422
+    assert api.get("/api/admin/workers", headers=auth(ADMIN)).json()[0]["model"] == "demo-model"
+
+
+def test_retag_rejects_unknown_and_revoked_and_requires_admin(api):
+    w = enroll_full(api, "retag2")
+    assert retag(api, "no-such-worker", "demo-model").status_code == 404
+    assert retag(api, w["id"], "demo-model", token=USER).status_code == 403
+    revoke(api, w["id"])
+    assert retag(api, w["id"], "demo-model").status_code == 409
 
 
 def test_heartbeat_stores_only_known_capability_fields(api):

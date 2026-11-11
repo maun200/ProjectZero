@@ -5,6 +5,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `grid_device.py update <name> --model <tag>` and a matching coordinator endpoint
+  (`POST /api/admin/workers/{id}/model`) to move a device to a different operator-approved
+  model in place — no new worker token, no new bundle to carry to the device, trust level and
+  credit history untouched. Previously the only way to change a device's model was
+  `remove` + `add`, which reissued its token and required transferring a fresh bundle.
+
 ### Documentation
 
 - Long-term goal stated in the README and roadmap: a global, federated, community-owned AI

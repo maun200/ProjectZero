@@ -7,7 +7,7 @@ ports. The coordinator itself stays on loopback; nothing is opened on the networ
 | Script | Runs on | Purpose |
 |---|---|---|
 | `scripts/grid_host_setup.sh` | coordinator host, once, `sudo` | user `gridtunnel` (no shell/home), root-owned key file, sshd drop-in limited to this user |
-| `scripts/grid_device.py` | coordinator host | `add` / `remove` / `list` devices: worker token + restricted key line + device bundle |
+| `scripts/grid_device.py` | coordinator host | `add` / `update` / `remove` / `list` devices: worker token + restricted key line + device bundle |
 | `scripts/grid_join.py` | device | `init` key, `check` tunnel, `run` tunnel + worker with reconnect |
 
 ## 1. Coordinator host (once)
@@ -103,6 +103,17 @@ WantedBy=default.target
 `systemctl --user daemon-reload && systemctl --user enable --now community-grid` (add
 `loginctl enable-linger $USER` to run without being logged in).
 
+## Switch a device's model
+
+```bash
+.venv/bin/python scripts/grid_device.py update fedora-laptop --model qwen2.5-coder:7b-instruct
+```
+
+Changes only which model this device is approved to serve; the worker token, SSH key and
+trust/credit history are untouched, so no new bundle needs to be carried to the device. This
+only updates the coordinator-side allowlist entry — on the device itself, edit `CAG_MODEL` in
+its `worker.env` to the same tag and restart `grid_join.py run` so the two sides agree again.
+
 ## Remove a device
 
 ```bash
@@ -110,7 +121,8 @@ WantedBy=default.target
 ```
 
 Removes the key line (new tunnels fail) and revokes the worker token (an already open tunnel can no
-longer claim or report jobs).
+longer claim or report jobs). Use this instead of `update` when the device itself is changing, not
+just its model.
 
 ## Tested / not tested
 

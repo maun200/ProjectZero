@@ -1,6 +1,7 @@
 """Coordinator-host helper: give one device a worker token and a tunnel-only SSH key.
 
     python scripts/grid_device.py add laptop --pubkey laptop.pub --host <address> --model qwen2.5-coder:1.5b
+    python scripts/grid_device.py update laptop --model qwen2.5-coder:7b-instruct
     python scripts/grid_device.py remove laptop
     python scripts/grid_device.py list
 
@@ -161,6 +162,19 @@ def add(args, client: httpx.Client, base: str, admin_key: str) -> dict:
     return {"device": args.name, "worker_id": worker["id"], "bundle": str(bundle_path)}
 
 
+def update(args, client: httpx.Client, base: str, admin_key: str) -> dict:
+    registry = load_registry(args.state)
+    if args.name not in registry:
+        raise ValueError(f"Unknown device {args.name!r}")
+    worker_id = registry[args.name]["worker_id"]
+    response = client.post(f"{base}/api/admin/workers/{worker_id}/model",
+                           headers={"Authorization": f"Bearer {admin_key}"}, json={"model": args.model})
+    response.raise_for_status()
+    registry[args.name]["model"] = args.model
+    save_registry(args.state, registry)
+    return {"device": args.name, "worker_id": worker_id, "model": args.model}
+
+
 def remove(args, client: httpx.Client, base: str, admin_key: str) -> dict:
     registry = load_registry(args.state)
     if args.name not in registry:
@@ -196,6 +210,10 @@ def main():
     adding.add_argument("--trust", choices=["trusted", "community"], default="trusted")
     removing = commands.add_parser("remove", help="Remove the tunnel key and revoke the worker token")
     removing.add_argument("name")
+    updating = commands.add_parser(
+        "update", help="Switch a device to a different operator-approved model, keeping its token")
+    updating.add_argument("name")
+    updating.add_argument("--model", required=True, help="New operator-approved model tag for this device")
     commands.add_parser("list", help="Show registered devices (no secrets)")
     args = parser.parse_args()
     if args.command == "list":
@@ -206,15 +224,19 @@ def main():
         sys.exit("Set CAG_ADMIN_KEY or start the coordinator once with scripts/run_coordinator.sh")
     args.coordinator_port = httpx.URL(base).port or 8765
     args.state.mkdir(parents=True, exist_ok=True, mode=0o700)
+    actions = {"add": add, "remove": remove, "update": update}
     with httpx.Client(timeout=15, trust_env=False) as client:
         try:
-            result = (add if args.command == "add" else remove)(args, client, base, key)
+            result = actions[args.command](args, client, base, key)
         except ValueError as exc:
             sys.exit(f"Error: {exc}")
     print(json.dumps(result, indent=2))
     if args.command == "add":
         print("IMPORTANT: The bundle contains the worker token. Move it to the device privately, then delete it here.",
               file=sys.stderr)
+    elif args.command == "update":
+        print("IMPORTANT: this only changed the server-side allowlist entry. On the device itself, edit "
+              "CAG_MODEL in worker.env to match and restart grid_join.py run.", file=sys.stderr)
 
 
 if __name__ == "__main__":
