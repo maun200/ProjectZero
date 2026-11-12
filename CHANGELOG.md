@@ -5,6 +5,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Desktop app: changing "Model on this device" snapped back to the old value and never actually
+  saved. `fillMachineModels()` reset the `<select>` to the server's last-known model on every
+  call, including the one the model-change handler itself made before saving the new value —
+  so the new selection was always overwritten before it reached the server. The reset now only
+  happens when the option list itself is rebuilt, not on every refresh.
+
 ### Added
 
 - `grid_device.py update <name> --model <tag>` and a matching coordinator endpoint
