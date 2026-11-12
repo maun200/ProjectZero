@@ -5,6 +5,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Desktop app: a finished AI answer now reveals word by word (a short "typing" animation,
+  respecting `prefers-reduced-motion`) instead of appearing all at once. The answer itself is
+  still generated and transmitted in one piece — this is a client-side reveal of the already-
+  complete text, not real token streaming from the worker.
+
 ### Fixed
 
 - Desktop app: changing "Model on this device" snapped back to the old value and never actually

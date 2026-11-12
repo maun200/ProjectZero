@@ -340,7 +340,13 @@ async function refreshAll(){await refreshLocal();if(!state.local.coordinator_url
 
 // ---------------------------------------------------------------- channels
 function markNav(){document.querySelectorAll("nav [data-channel]").forEach(b=>b.setAttribute("aria-current",String(b.dataset.channel===state.active)))}
-function renderAi(){$("chat-title").textContent=t("aiChat");$("log").replaceChildren();if(!state.ai.length)sysmsg(t("aiEmpty"));for(const m of state.ai)$("log").append(el("div",{class:"msg"+(m.role==="user"?" mine":"")},el("div",{class:"who",text:m.role==="user"?t("you"):t("ai")+(m.model?" - "+m.model:"")}),m.role==="user"?m.content:md(m.content)));scrollLog()}
+function renderAi(){$("chat-title").textContent=t("aiChat");$("log").replaceChildren();if(!state.ai.length)sysmsg(t("aiEmpty"));
+  for(const m of state.ai)$("log").append(el("div",{class:"msg"+(m.role==="user"?" mine":"")},el("div",{class:"who",text:m.role==="user"?t("you"):t("ai")+(m.model?" - "+m.model:"")}),el("div",{class:"body"},m.role==="user"?m.content:md(m.content))));scrollLog()}
+async function typeReveal(container,fullText){
+  let reduced=false;try{reduced=matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
+  if(reduced){container.replaceChildren(md(fullText));return}
+  const chunks=fullText.split(/(\s+)/).filter(Boolean);const delay=Math.max(8,Math.min(40,900/Math.max(chunks.length,1)));
+  let shown="";for(const c of chunks){shown+=c;container.replaceChildren(md(shown));scrollLog();await sleep(delay)}}
 async function openChannel(id){state.active=id;markNav();setView("main");const ai=id==="ai";$("ai-controls").classList.toggle("hidden",!ai);
   const c=state.channels.find(x=>x.id===id);$("group-controls").classList.toggle("hidden",!c||c.kind!=="group");
   if(ai){renderAi();return}
@@ -390,7 +396,8 @@ async function askAi(text){const model=$("model").value;const privacy=$("privacy
   const history=state.ai.slice(-15).map(m=>({role:m.role,content:m.content}));
   try{const job=await post("/api/jobs",{model,privacy,allow_untrusted:privacy==="community",messages:history,max_output_tokens:256});refreshMe();
     for(let i=0;i<200;i++){await sleep(i<10?1000:3000);const s=await call("/api/jobs/"+job.id);renderPending(pendingLine,pendingText,pendingTimeline,s);
-      if(s.status==="completed"){state.ai.push({role:"assistant",content:s.output.content,model});renderAi();refreshMe();return}
+      if(s.status==="completed"){state.ai.push({role:"assistant",content:s.output.content,model});renderAi();
+        await typeReveal($("log").lastElementChild.querySelector(".body"),s.output.content);refreshMe();return}
       if(s.status==="failed"||s.status==="cancelled"){setPendingDots(pendingLine,false);pendingText.textContent=t("noAnswer",{reason:s.error||s.status});refreshMe();return}}
     setPendingDots(pendingLine,false);pendingText.textContent=t("tooLong")}
   catch(e){setPendingDots(pendingLine,false);pendingText.textContent=t("error")+": "+e.message;state.ai.pop()}}
