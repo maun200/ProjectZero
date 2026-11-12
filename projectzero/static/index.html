@@ -310,9 +310,10 @@ async function refreshLocal(){
   const o=L.ollama;$("ollama-note").textContent=s.backend==="mock"?t("mockNote"):(o.available?t("ollamaFound",{n:o.models.length}):t("ollamaMissing"));
   fillMachineModels();
 }
-function fillMachineModels(){const allowed=(state.public&&state.public.allowed_models)||[];const sel=$("machine-model");const cur=(state.local.machine&&state.local.machine.model)||sel.value;
-  if(sel.options.length!==allowed.length){sel.replaceChildren(...allowed.map(m=>el("option",{value:m,text:m})))}
-  if(cur)sel.value=cur;const o=state.local.ollama;const need=$("backend").value==="ollama"&&o.available&&sel.value&&sel.value!=="demo-model"&&!o.models.includes(sel.value);
+function fillMachineModels(){const allowed=(state.public&&state.public.allowed_models)||[];const sel=$("machine-model");
+  if(sel.options.length!==allowed.length){const cur=(state.local.machine&&state.local.machine.model)||sel.value;
+    sel.replaceChildren(...allowed.map(m=>el("option",{value:m,text:m})));if(cur)sel.value=cur}
+  const o=state.local.ollama;const need=$("backend").value==="ollama"&&o.available&&sel.value&&sel.value!=="demo-model"&&!o.models.includes(sel.value);
   const pull=state.local.pulls[sel.value];$("pull").classList.toggle("hidden",!need);$("pull").disabled=pull==="running";$("pull").textContent=pull==="running"?t("downloading"):t("downloadModel")}
 async function refreshMe(){if(!state.local||!state.local.signed_in)return;try{state.me=await call("/api/me");const m=state.me;$("credits").textContent=m.credits;$("provisional").textContent=m.provisional_credits;$("earned").textContent=m.earned_credits;$("cost").textContent=m.job_cost;$("server-dot").className="dot on"}catch(e){$("server-dot").className="dot off"}}
 async function refreshPublic(){try{state.public=await call("/api/public/config");const sel=$("model");const cur=sel.value;sel.replaceChildren(...state.public.allowed_models.map(m=>el("option",{value:m,text:m})));if(cur)sel.value=cur;if(state.local)fillMachineModels();markModels()}catch(e){}}
