@@ -15,6 +15,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `GET /api/jobs/{id}` now reports a lifecycle log (`events`: queued/claimed/requeued/
+  completed/failed/cancelled, each with a timestamp and, where relevant, the worker's display
+  name and error) and `available_workers` (how many online, operator-approved workers could
+  currently take this job). The desktop app's AI chat shows this live under the pending answer —
+  which machine is working on it, retries, or that nobody is online for the chosen model yet —
+  instead of a static "waiting..."/"computing..." label, plus a small bouncing-dots animation
+  (respects `prefers-reduced-motion`) so there's always something visibly moving while a request
+  is in flight. Worker identity is only ever shown to the job's own owner, for their own request.
 - `grid_device.py update <name> --model <tag>` and a matching coordinator endpoint
   (`POST /api/admin/workers/{id}/model`) to move a device to a different operator-approved
   model in place — no new worker token, no new bundle to carry to the device, trust level and

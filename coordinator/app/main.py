@@ -51,21 +51,45 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def append_event(db: sqlite3.Connection, job_id: str, type_: str, worker_id: str | None = None,
+                 error: str | None = None) -> None:
+    """Append one lifecycle event to a job's event log, for the requester's own status display.
+
+    Keeps only worker ids (resolved to names at read time, see job_status()) so a removed/renamed
+    worker never leaves a stale name baked into history. Must run inside an open write transaction.
+    """
+    row = db.execute("SELECT events_json FROM jobs WHERE id=?", (job_id,)).fetchone()
+    if row is None:
+        return
+    events = json.loads(row["events_json"] or "[]")
+    event: dict = {"t": ts(), "type": type_}
+    if worker_id:
+        event["worker_id"] = worker_id
+    if error:
+        event["error"] = error[:200]
+    events.append(event)
+    db.execute("UPDATE jobs SET events_json=? WHERE id=?", (json.dumps(events[-20:]), job_id))
+
+
 def requeue_or_fail(db: sqlite3.Connection, job: sqlite3.Row, error: str, timestamp: str,
                     refund_note: str) -> Literal["queued", "failed"]:
     """Give a job back to the queue, or fail and refund it once attempts are exhausted.
 
-    Must run inside an open write transaction.
+    `job` must include `assigned_worker` (e.g. from `SELECT *`) so the failing worker can be
+    recorded on the event log. Must run inside an open write transaction.
     """
+    worker_id = job["assigned_worker"] if "assigned_worker" in job.keys() else None
     if job["attempts"] < MAX_ATTEMPTS:
         db.execute("""UPDATE jobs SET status='queued',error=?,assigned_worker=NULL,lease_hash=NULL,
             lease_until=NULL,updated_at=? WHERE id=?""", (error[:500], timestamp, job["id"]))
+        append_event(db, job["id"], "requeued", worker_id=worker_id, error=error)
         return "queued"
     db.execute("""UPDATE jobs SET status='failed',error=?,lease_hash=NULL,
         lease_until=NULL,updated_at=? WHERE id=?""", (error[:500], timestamp, job["id"]))
     db.execute("UPDATE users SET credits=credits+? WHERE id=?", (job["reservation"], job["user_id"]))
     db.execute("INSERT INTO ledger(actor_type,actor_id,delta,job_id,note,created_at) VALUES ('user',?,?,?,?,?)",
                (job["user_id"], job["reservation"], job["id"], refund_note, timestamp))
+    append_event(db, job["id"], "failed", worker_id=worker_id, error=error)
     return "failed"
 
 
@@ -74,8 +98,9 @@ def release_expired(db: sqlite3.Connection, timestamp: str):
 
     Must run inside an open write transaction.
     """
-    expired = db.execute("SELECT id,user_id,reservation,attempts FROM jobs WHERE status='running' AND lease_until<=?",
-                         (timestamp,)).fetchall()
+    expired = db.execute(
+        "SELECT id,user_id,reservation,attempts,assigned_worker FROM jobs WHERE status='running' AND lease_until<=?",
+        (timestamp,)).fetchall()
     for old in expired:
         requeue_or_fail(db, old, "Worker lease expired", timestamp, "refund_expired_job")
 
@@ -96,6 +121,7 @@ def expire_stale_queued(db: sqlite3.Connection, timestamp: str, cutoff: str) -> 
         db.execute("UPDATE users SET credits=credits+? WHERE id=?", (job["reservation"], job["user_id"]))
         db.execute("INSERT INTO ledger(actor_type,actor_id,delta,job_id,note,created_at) VALUES ('user',?,?,?,'refund_queue_timeout',?)",
                    (job["user_id"], job["reservation"], job["id"], timestamp))
+        append_event(db, job["id"], "failed", error="Queue timeout: no matching worker")
     return len(stale)
 
 
@@ -405,10 +431,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if change.rowcount != 1:
                 db.rollback()
                 raise HTTPException(status_code=402, detail="Insufficient demo credits")
-            db.execute("""INSERT INTO jobs(id,user_id,model,messages_json,privacy,max_output_tokens,status,created_at,updated_at,reservation)
-                VALUES (?,?,?,?,?,?,'queued',?,?,?)""",
+            db.execute("""INSERT INTO jobs(id,user_id,model,messages_json,privacy,max_output_tokens,status,
+                created_at,updated_at,reservation,events_json) VALUES (?,?,?,?,?,?,'queued',?,?,?,?)""",
                 (ident, identity, payload.model, json.dumps([m.model_dump() for m in payload.messages]),
-                 payload.privacy, payload.max_output_tokens, timestamp, timestamp, COST))
+                 payload.privacy, payload.max_output_tokens, timestamp, timestamp, COST,
+                 json.dumps([{"t": timestamp, "type": "queued"}])))
             db.execute("INSERT INTO ledger(actor_type,actor_id,delta,job_id,note,created_at) VALUES ('user',?,?,?,'reserved_demo_job',?)",
                        (identity, -COST, ident, timestamp))
             db.commit()
@@ -422,12 +449,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             sweep(db, now(), cfg.queue_timeout_seconds)
             db.commit()
             row = db.execute("SELECT * FROM jobs WHERE id=? AND user_id=?", (job_id, identity)).fetchone()
-        if row is None:
-            raise HTTPException(404, "Job not found")
+            if row is None:
+                raise HTTPException(404, "Job not found")
+            # How many currently-online workers could even take this job, for "nobody is listening yet" vs
+            # "queued behind other work" - not who they are, which stays scoped to this job's own events.
+            online_cutoff = ts(now() - timedelta(seconds=community.ONLINE_SECONDS))
+            available_workers = db.execute(
+                """SELECT COUNT(*) c FROM workers WHERE model=? AND revoked_at IS NULL AND last_seen>?
+                    AND (?='community' OR trust_level='trusted')""",
+                (row["model"], online_cutoff, row["privacy"])).fetchone()["c"]
+            events = json.loads(row["events_json"] or "[]")
+            worker_ids = {e["worker_id"] for e in events if e.get("worker_id")}
+            names = {}
+            if worker_ids:
+                placeholders = ",".join("?" * len(worker_ids))
+                names = {r["id"]: r["name"] for r in db.execute(
+                    f"SELECT id,name FROM workers WHERE id IN ({placeholders})", tuple(worker_ids))}
+        resolved_events = [{"t": e["t"], "type": e["type"],
+                            **({"worker": names.get(e["worker_id"], "removed worker")} if e.get("worker_id") else {}),
+                            **({"error": e["error"]} if e.get("error") else {})} for e in events]
         return {"id": row["id"], "status": row["status"], "model": row["model"],
                 "privacy": row["privacy"], "attempts": row["attempts"],
                 "output": json.loads(row["result_json"]) if row["result_json"] else None,
-                "error": row["error"] if row["status"] in ("failed", "cancelled") else None}
+                "error": row["error"] if row["status"] in ("failed", "cancelled") else None,
+                "available_workers": available_workers, "events": resolved_events}
 
     @app.post("/api/jobs/{job_id}/cancel")
     def cancel(job_id: str, identity: str = Depends(user)):
@@ -448,6 +493,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             db.execute("UPDATE users SET credits=credits+? WHERE id=?", (row["reservation"], identity))
             db.execute("INSERT INTO ledger(actor_type,actor_id,delta,job_id,note,created_at) VALUES ('user',?,?,?,'refund_cancelled_job',?)",
                        (identity, row["reservation"], job_id, timestamp))
+            append_event(db, job_id, "cancelled")
             db.commit()
         return {"id": job_id, "status": "cancelled", "refunded": row["reservation"]}
 
@@ -673,6 +719,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 attempts=attempts+1,updated_at=? WHERE id=?""",
                 (w["id"], digest(lease), ts(current + timedelta(seconds=cfg.lease_seconds)), timestamp, chosen["id"]))
             db.execute("UPDATE workers SET last_seen=? WHERE id=?", (timestamp, w["id"]))
+            append_event(db, chosen["id"], "claimed", worker_id=w["id"])
             db.commit()
         return {"job": {"id": chosen["id"], "model": chosen["model"],
                         "messages": json.loads(chosen["messages_json"]),
@@ -708,6 +755,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     db.execute("UPDATE workers SET provisional_credits=provisional_credits+? WHERE id=?", (COST, w["id"]))
                     db.execute("INSERT INTO ledger(actor_type,actor_id,delta,job_id,note,created_at) VALUES ('worker',?,?,?,'unverified_provisional_reward',?)",
                                (w["id"], COST, payload.job_id, timestamp))
+                append_event(db, payload.job_id, "completed", worker_id=w["id"])
             else:
                 requeue_or_fail(db, chosen, payload.error, timestamp, "refund_failed_job")
             db.commit()
