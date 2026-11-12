@@ -84,6 +84,8 @@ class Database:
             add_column_if_missing(db, "users", "created_at", "TEXT")
             add_column_if_missing(db, "users", "last_active", "TEXT")
             add_column_if_missing(db, "workers", "owner_id", "TEXT")
+            # v0.4: per-job lifecycle log, so a requester can see what's happening with their request.
+            add_column_if_missing(db, "jobs", "events_json", "TEXT NOT NULL DEFAULT '[]'")
             db.executescript("""
             CREATE UNIQUE INDEX IF NOT EXISTS users_name_idx ON users(name COLLATE NOCASE) WHERE name IS NOT NULL;
             CREATE TABLE IF NOT EXISTS invites (
