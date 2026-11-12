@@ -18,11 +18,14 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from worker.client import Worker
 
 from . import __version__
+from .chats import ChatStore, account_key
 from .config import Config, check_coordinator_url, clamp_settings
 
 OLLAMA = "http://127.0.0.1:11434"
@@ -50,6 +53,18 @@ class MachineIn(BaseModel):
 
 class PullIn(BaseModel):
     model: str = Field(min_length=1, max_length=80)
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=100_000)
+    model: str | None = Field(default=None, max_length=80)
+
+
+class ChatIn(BaseModel):
+    title: str = Field(default="", max_length=500)
+    model: str = Field(default="", max_length=80)
+    messages: list[ChatMessage] = Field(max_length=500)
 
 
 class WorkerRunner:
@@ -256,6 +271,45 @@ def create_app(config: Config | None = None, port: int = 8790, session: str | No
         config.update(settings=merged)
         await runner.apply()
         return {"settings": merged, "worker": runner.status()}
+
+    # ------------------------------------------------------------ local AI-chat history
+    chats = ChatStore(config.dir / "chats")
+
+    def chat_account() -> str:
+        url, token = require_account()
+        return account_key(url, config.get("name") or token)
+
+    def chat_body(payload: ChatIn) -> dict:
+        return {"title": payload.title, "model": payload.model,
+                "messages": [m.model_dump(exclude_none=True) for m in payload.messages]}
+
+    @app.get("/local/chats")
+    def list_chats():
+        return {"chats": chats.list(chat_account())}
+
+    @app.post("/local/chats", status_code=201)
+    def create_chat(payload: ChatIn):
+        return chats.save(chat_account(), None, **chat_body(payload))
+
+    @app.get("/local/chats/{chat_id}")
+    def get_chat(chat_id: str):
+        chat = chats.get(chat_account(), chat_id)
+        if chat is None:
+            raise HTTPException(404, "Chat not found")
+        return chat
+
+    @app.put("/local/chats/{chat_id}")
+    def update_chat(chat_id: str, payload: ChatIn):
+        try:
+            return chats.save(chat_account(), chat_id, **chat_body(payload))
+        except (KeyError, ValueError):
+            raise HTTPException(404, "Chat not found") from None
+
+    @app.delete("/local/chats/{chat_id}")
+    def delete_chat(chat_id: str):
+        if not chats.delete(chat_account(), chat_id):
+            raise HTTPException(404, "Chat not found")
+        return {"ok": True}
 
     @app.post("/local/ollama/pull")
     async def pull(payload: PullIn):

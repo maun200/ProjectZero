@@ -117,3 +117,49 @@ def test_clamp_settings_and_private_config_file(tmp_path):
     if os.name == "posix" and probe.stat().st_mode & 0o077 == 0:  # some mounts (fuseblk) ignore chmod
         assert (config.path.stat().st_mode & 0o077) == 0
     assert Config(tmp_path / "c").get("user_token") == "cag_usr_secret"
+
+
+def test_chat_history_endpoints(stack):
+    client, config, _ = stack
+    client.post("/local/connect", json={"coordinator_url": COORD})
+    assert client.get("/local/chats").status_code == 409  # not signed in yet
+    client.post("/local/register", json={"name": "carol"})
+    assert client.get("/local/chats").json() == {"chats": []}
+
+    msgs = [{"role": "user", "content": "Erzähl mir was"}]
+    created = client.post("/local/chats", json={"title": "Erzähl mir was", "model": "demo-model", "messages": msgs})
+    assert created.status_code == 201, created.text
+    chat_id = created.json()["id"]
+    msgs.append({"role": "assistant", "content": "Es war einmal ...", "model": "demo-model"})
+    updated = client.put(f"/local/chats/{chat_id}", json={"title": "Erzähl mir was", "model": "demo-model",
+                                                           "messages": msgs})
+    assert updated.status_code == 200 and updated.json()["id"] == chat_id
+    assert client.get(f"/local/chats/{chat_id}").json()["messages"] == msgs
+    listed = client.get("/local/chats").json()["chats"]
+    assert [c["id"] for c in listed] == [chat_id] and "messages" not in listed[0]
+    files = list((config.dir / "chats").rglob("*.json"))
+    assert len(files) == 1 and "carol" not in str(files[0])  # account dir is a hash, not the name
+
+    assert client.get("/local/chats/0123456789abcdef").status_code == 404
+    assert client.get("/local/chats/..%2F..%2Fconfig").status_code == 404
+    assert client.put("/local/chats/0123456789abcdef", json={"title": "x", "model": "m", "messages": msgs}
+                      ).status_code == 404
+    assert client.post("/local/chats", json={"title": "x", "model": "m",
+                                             "messages": [{"role": "system", "content": "x"}]}).status_code == 422
+    assert client.post("/local/chats", json={"title": "x", "model": "m",
+                                             "messages": [{"role": "user", "content": "x"}] * 501}).status_code == 422
+    assert client.get("/local/chats", headers={"X-PZ-Session": "wrong"}).status_code == 403
+
+    # another account on the same computer does not see carol's chats; logging back in does
+    client.post("/local/logout")  # also forgets the server address
+    client.post("/local/connect", json={"coordinator_url": COORD})
+    client.post("/local/register", json={"name": "dave"})
+    assert client.get("/local/chats").json() == {"chats": []}
+    assert client.get(f"/local/chats/{chat_id}").status_code == 404
+    client.post("/local/logout")
+    config.update(coordinator_url=COORD, user_token="ignored", name="carol")  # same server + name = same history
+    assert [c["id"] for c in client.get("/local/chats").json()["chats"]] == [chat_id]
+
+    assert client.delete(f"/local/chats/{chat_id}").json() == {"ok": True}
+    assert client.delete(f"/local/chats/{chat_id}").status_code == 404
+    assert client.get("/local/chats").json() == {"chats": []}

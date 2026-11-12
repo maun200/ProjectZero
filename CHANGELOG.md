@@ -5,6 +5,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Desktop app: AI-chat history. Every conversation is saved locally by the app (one owner-only
+  JSON file per chat under `<config>/chats/<account-key>/`, never sent to the coordinator) and
+  listed under "Previous chats" in the sidebar, newest first. Opening a chat restores its
+  messages and model so you can continue it; "+" starts a new chat, "×" deletes one. Chats are
+  kept per account (server + name) and survive sign-out. New endpoints: `GET/POST /local/chats`,
+  `GET/PUT/DELETE /local/chats/{id}`.
+
 ### Changed
 
 - Desktop app: a finished AI answer now reveals word by word (a short "typing" animation,
@@ -13,6 +22,10 @@ All notable changes to this project are documented here. The format follows
   complete text, not real token streaming from the worker.
 
 ### Fixed
+
+- Desktop app: an AI request failed with "s.events is undefined" when the coordinator was older
+  than the app and returned job status without the lifecycle `events` list. The app now treats a
+  missing list as empty.
 
 - Desktop app: changing "Model on this device" snapped back to the old value and never actually
   saved. `fillMachineModels()` reset the `<select>` to the server's last-known model on every
